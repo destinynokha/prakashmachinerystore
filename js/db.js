@@ -59,7 +59,7 @@
     };
 
     PMS.getCategories = function () {
-        return PMS.sb.from('categories').select('*').order('sort_order', { ascending: true }).then(function (res) {
+        return PMS.sb.from('categories').select('*').order('name', { ascending: true }).then(function (res) {
             if (res.error) throw res.error;
             return res.data || [];
         });
