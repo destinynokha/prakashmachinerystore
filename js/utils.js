@@ -183,7 +183,7 @@
 
             if (PMS.createLead) {
                 PMS.createLead({
-                    user_id: PMS.currentUser.id,
+                    user_id: PMS.currentUser ? PMS.currentUser.id : null,
                     name: profile.name,
                     firm_name: profile.firmName,
                     phone: profile.phone,
