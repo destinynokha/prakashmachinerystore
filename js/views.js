@@ -1,0 +1,428 @@
+// ===== Views (Catalog, Product, Cart, Admin) =====
+(function (PMS) {
+
+    var wishlistIds = [];
+    var curCat = 'All', curSort = 'newest', curSearch = '';
+
+    // ==================== CATALOG ====================
+    PMS.renderCatalog = function (el) {
+        var wlPromise = PMS.isLoggedIn() ? PMS.getWishlist(PMS.currentUser.id).catch(function () { return []; }) : Promise.resolve([]);
+        wlPromise.then(function (wl) {
+            wishlistIds = wl;
+            el.innerHTML =
+                '<section class="hero-banner"><div class="container">' +
+                '<h1>Prakash Machinery Store</h1>' +
+                '<p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>' +
+                '<div class="hero-actions">' +
+                '<a href="#catalog-grid" class="btn btn-primary btn-lg">Browse Products</a>' +
+                '<a href="' + PMS.waUrl("Hello Prakash Machinery Store, I'm interested in your products") + '" target="_blank" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
+                '</div>' +
+                '</div></section>' +
+                '<div class="filter-bar"><div class="filter-bar-inner" id="cat-filters"></div></div>' +
+                '<section class="catalog-section" id="catalog-grid"><div class="container">' +
+                '<div class="catalog-header"><h2 id="cat-title">All Products</h2><span class="catalog-count" id="cat-count"></span></div>' +
+                '<div class="product-grid" id="pgrid"></div>' +
+                '<div id="cat-empty" class="empty-state hidden"><div class="empty-icon">\uD83D\uDD0D</div><h3>No products found</h3><p>Try changing your search or filter.</p></div>' +
+                '</div></section>' +
+                renderAbout();
+            loadCats();
+            loadGrid();
+
+            var si = document.getElementById('search-input');
+            if (si) si.oninput = PMS.debounce(function (e) { curSearch = e.target.value; loadGrid(); });
+        });
+    };
+
+    function loadCats() {
+        var fc = document.getElementById('cat-filters');
+        if (!fc) return;
+        PMS.getCategories().catch(function () { return PMS.CATEGORIES; }).then(function (cats) {
+            var h = '<button class="filter-chip ' + (curCat === 'All' ? 'active' : '') + '" data-c="All">All</button>';
+            cats.forEach(function (c) { h += '<button class="filter-chip ' + (curCat === c ? 'active' : '') + '" data-c="' + PMS.esc(c) + '">' + PMS.esc(c) + '</button>'; });
+            h += '<div class="filter-sort"><select id="sort-sel"><option value="newest">Newest</option><option value="name">Name A-Z</option><option value="price-low">Price: Low-High</option><option value="price-high">Price: High-Low</option></select></div>';
+            fc.innerHTML = h;
+            fc.querySelectorAll('.filter-chip').forEach(function (chip) {
+                chip.onclick = function () { curCat = chip.dataset.c; fc.querySelectorAll('.filter-chip').forEach(function (c) { c.classList.remove('active'); }); chip.classList.add('active'); loadGrid(); };
+            });
+            var ss = document.getElementById('sort-sel');
+            if (ss) { ss.value = curSort; ss.onchange = function () { curSort = ss.value; loadGrid(); }; }
+        });
+    }
+
+    function loadGrid() {
+        var grid = document.getElementById('pgrid'), empty = document.getElementById('cat-empty'), cnt = document.getElementById('cat-count'), ttl = document.getElementById('cat-title');
+        if (!grid) return;
+        PMS.skeletons(grid);
+        PMS.getProducts({ category: curCat, sortBy: curSort, search: curSearch }).then(function (products) {
+            if (ttl) ttl.textContent = curCat === 'All' ? 'All Products' : curCat;
+            if (cnt) cnt.textContent = products.length + ' product' + (products.length !== 1 ? 's' : '');
+            if (!products.length) { grid.innerHTML = ''; if (empty) empty.classList.remove('hidden'); return; }
+            if (empty) empty.classList.add('hidden');
+            grid.innerHTML = products.map(function (p) { return cardHTML(p); }).join('');
+            bindCards(grid);
+        }).catch(function (err) {
+            console.error(err);
+            grid.innerHTML = '<div class="empty-state"><div class="empty-icon">\u26A0\uFE0F</div><h3>Failed to load</h3><p>Check connection.</p></div>';
+        });
+    }
+
+    function cardHTML(p) {
+        var price = PMS.formatPrice(p.price), mrp = PMS.formatPrice(p.mrp), disc = PMS.calcDiscount(p.price, p.mrp);
+        var wl = wishlistIds.includes(p.id);
+        var img = (p.images && p.images[0]) || '';
+        var priceH = price ? '<div class="product-card-price"><span class="price-current">' + price + '</span>' + (mrp && disc > 0 ? '<span class="price-mrp">' + mrp + '</span>' : '') + '</div>' : '<div class="product-card-price"><span class="price-contact">Contact for Price</span></div>';
+        var badges = '';
+        if (!p.in_stock) badges = '<span class="card-badge card-badge-outofstock">Out of Stock</span>';
+        else if (disc > 0) badges = '<span class="card-badge card-badge-discount">' + disc + '% OFF</span>';
+        return '<div class="product-card" data-id="' + p.id + '">' +
+            '<div class="product-card-image">' +
+            (img ? '<img src="' + PMS.esc(img) + '" alt="' + PMS.esc(p.name) + '" loading="lazy">' : '<div class="no-image">\uD83D\uDCE6</div>') +
+            (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
+            '<div class="card-quick-actions"><button class="quick-action-btn wl-btn ' + (wl ? 'wishlisted' : '') + '" data-id="' + p.id + '">' + (wl ? '\u2764\uFE0F' : '\uD83E\uDD0D') + '</button></div>' +
+            '</div>' +
+            '<div class="product-card-body">' +
+            '<div class="product-card-category">' + PMS.esc(p.category || '') + '</div>' +
+            '<h3 class="product-card-title">' + PMS.esc(p.name) + '</h3>' +
+            (p.brand ? '<div class="product-card-brand">' + PMS.esc(p.brand) + '</div>' : '') +
+            priceH +
+            '<div class="stock-indicator ' + (p.in_stock ? 'stock-in' : 'stock-out') + '"><span class="stock-dot"></span>' + (p.in_stock ? 'In Stock' : 'Out of Stock') + '</div>' +
+            '<div class="product-card-footer">' +
+            (p.in_stock ? '<button class="btn btn-primary btn-sm cart-btn" data-id="' + p.id + '">' + (price ? '\uD83D\uDED2 Add to Cart' : '\uD83D\uDCAC Enquire') + '</button>' : '<button class="btn btn-outline btn-sm" disabled>Out of Stock</button>') +
+            '</div>' +
+            '</div></div>';
+    }
+
+    function bindCards(grid) {
+        grid.querySelectorAll('.product-card').forEach(function (card) {
+            card.onclick = function (e) { if (!e.target.closest('.quick-action-btn') && !e.target.closest('.btn')) PMS.go('product', { id: card.dataset.id }); };
+        });
+        grid.querySelectorAll('.wl-btn').forEach(function (btn) {
+            btn.onclick = function (e) {
+                e.stopPropagation();
+                if (!PMS.isLoggedIn()) { PMS.toast('Sign in to save items.', 'warning'); return; }
+                var pid = btn.dataset.id, uid = PMS.currentUser.id;
+                if (wishlistIds.includes(pid)) {
+                    PMS.removeFromWishlist(uid, pid); wishlistIds = wishlistIds.filter(function (i) { return i !== pid; }); btn.classList.remove('wishlisted'); btn.innerHTML = '\uD83E\uDD0D';
+                } else {
+                    PMS.addToWishlist(uid, pid); wishlistIds.push(pid); btn.classList.add('wishlisted'); btn.innerHTML = '\u2764\uFE0F';
+                }
+            };
+        });
+        grid.querySelectorAll('.cart-btn').forEach(function (btn) {
+            btn.onclick = function (e) {
+                e.stopPropagation(); var pid = btn.dataset.id;
+                if (btn.textContent.includes('Enquire')) { var n = btn.closest('.product-card').querySelector('.product-card-title').textContent; window.open(PMS.waUrl("Hi, I'm interested in: " + n + ". Please share price."), '_blank'); return; }
+                PMS.getProduct(pid).then(function (p) { if (p) PMS.addToCartItem(p); });
+            };
+        });
+    }
+
+    function renderAbout() {
+        return '<section class="about-section" id="about"><div class="container"><h2>About Us</h2><div class="section-divider"></div><div class="about-grid">' +
+            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prakash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p></div>' +
+            '<div class="about-card" id="contact"><h3>Contact Us</h3>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDCCD</span><p>' + PMS.STORE.address + '</p></div>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDCDE</span><p><a href="tel:' + PMS.STORE.phone + '">' + PMS.STORE.phone + '</a></p></div>' +
+            '<div class="contact-detail"><span class="icon">\u2709\uFE0F</span><p><a href="mailto:' + PMS.STORE.ordersEmail + '">' + PMS.STORE.ordersEmail + '</a></p></div>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDCAC</span><p><a href="https://wa.me/' + PMS.STORE.whatsapp + '" target="_blank">WhatsApp: ' + PMS.STORE.phone + '</a></p></div>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDD52</span><p>' + PMS.STORE.hours + '</p></div>' +
+            '<iframe class="map-embed" src="' + PMS.STORE.mapUrl + '" allowfullscreen loading="lazy"></iframe>' +
+            '</div></div></div></section>';
+    }
+
+    // ==================== PRODUCT DETAIL ====================
+    PMS.renderProduct = function (el, params) {
+        var pid = params.id;
+        if (!pid) { el.innerHTML = '<div class="empty-state"><h3>Product not found</h3></div>'; return; }
+        el.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>';
+        PMS.getProduct(pid).then(function (p) {
+            if (!p) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDCE6</div><h3>Product Not Found</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back to Store</button></div></div>'; return; }
+            var wlP = PMS.isLoggedIn() ? PMS.getWishlist(PMS.currentUser.uid).catch(function () { return []; }) : Promise.resolve([]);
+            wlP.then(function (wl) {
+                var isWl = wl.includes(pid);
+                var price = PMS.formatPrice(p.price), mrp = PMS.formatPrice(p.mrp), disc = PMS.calcDiscount(p.price, p.mrp);
+                var imgs = (p.images && p.images.length) ? p.images : [];
+                var mainImg = imgs[0] || '';
+                var priceH = price ? '<div class="product-detail-price"><span class="detail-price-current">' + price + '</span>' + (mrp && disc > 0 ? '<span class="detail-price-mrp">' + mrp + '</span><span class="detail-price-discount">' + disc + '% OFF</span>' : '') + '</div>' : '<div class="product-detail-price"><span class="price-contact" style="font-size:1.2rem">Contact for Price</span></div>';
+                var specsH = '';
+                if (p.specifications && Object.keys(p.specifications).length) {
+                    specsH = '<div><h3 style="font-size:1.05rem;font-weight:700;margin-bottom:12px">Specifications</h3><table class="specs-table">';
+                    Object.entries(p.specifications).forEach(function (kv) { specsH += '<tr><td>' + PMS.esc(kv[0]) + '</td><td>' + PMS.esc(kv[1]) + '</td></tr>'; });
+                    specsH += '</table></div>';
+                }
+                var waMsg = "Hi, I'm interested in: " + p.name + (price ? ' (' + price + ')' : '') + ". Please share details.";
+                el.innerHTML = '<section class="product-detail"><div class="container">' +
+                    '<div class="breadcrumb"><a href="#" onclick="event.preventDefault();PMS.go(\'home\')">Home</a><span class="sep">\u203A</span><span>' + PMS.esc(p.name) + '</span></div>' +
+                    '<div class="product-detail-grid"><div class="product-gallery"><div class="gallery-main" id="gmain">' + (mainImg ? '<img src="' + PMS.esc(mainImg) + '" alt="' + PMS.esc(p.name) + '">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:5rem">\uD83D\uDCE6</div>') + '</div>' +
+                    (imgs.length > 1 ? '<div class="gallery-thumbs">' + imgs.map(function (im, i) { return '<div class="gallery-thumb ' + (i === 0 ? 'active' : '') + '" data-src="' + PMS.esc(im) + '"><img src="' + PMS.esc(im) + '" alt="Thumb"></div>'; }).join('') + '</div>' : '') +
+                    '</div>' +
+                    '<div class="product-info-section">' +
+                    (p.category ? '<div class="product-detail-category">' + PMS.esc(p.category) + '</div>' : '') +
+                    '<h1 class="product-detail-title">' + PMS.esc(p.name) + '</h1>' +
+                    (p.brand ? '<div class="product-detail-brand">by ' + PMS.esc(p.brand) + '</div>' : '') +
+                    priceH +
+                    '<div class="stock-indicator ' + (p.in_stock ? 'stock-in' : 'stock-out') + '"><span class="stock-dot"></span>' + (p.in_stock ? 'In Stock' : 'Out of Stock') + '</div>' +
+                    '<p class="product-detail-desc">' + PMS.esc(p.description || '') + '</p>' +
+                    specsH +
+                    '<div class="product-detail-actions">' +
+                    (p.in_stock && price ? '<button class="btn btn-primary btn-lg" id="d-cart">\uD83D\uDED2 Add to Cart</button>' : '') +
+                    '<a href="' + PMS.waUrl(waMsg) + '" target="_blank" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC ' + (price ? 'Ask on WhatsApp' : 'Enquire') + '</a>' +
+                    '<button class="btn btn-outline" id="d-wl">' + (isWl ? '\u2764\uFE0F Saved' : '\uD83E\uDD0D Save') + '</button>' +
+                    '</div></div></div></div></section>';
+
+                // Bind thumbs
+                el.querySelectorAll('.gallery-thumb').forEach(function (th) {
+                    th.onclick = function () { document.getElementById('gmain').innerHTML = '<img src="' + th.dataset.src + '" alt="">'; el.querySelectorAll('.gallery-thumb').forEach(function (t) { t.classList.remove('active'); }); th.classList.add('active'); };
+                });
+                // Bind cart
+                var cb = document.getElementById('d-cart');
+                if (cb) cb.onclick = function () { PMS.addToCartItem(p); };
+                // Bind wishlist
+                var wb = document.getElementById('d-wl');
+                if (wb) wb.onclick = function () {
+                    if (!PMS.isLoggedIn()) { PMS.toast('Sign in to save.', 'warning'); return; }
+                    if (isWl) { PMS.removeFromWishlist(PMS.currentUser.uid, pid); isWl = false; wb.innerHTML = '\uD83E\uDD0D Save'; PMS.toast('Removed.', 'info'); }
+                    else { PMS.addToWishlist(PMS.currentUser.uid, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }
+                };
+            });
+        });
+    };
+
+    // ==================== CART PAGE ====================
+    PMS.renderCart = function (el) {
+        if (!PMS.isLoggedIn()) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDD12</div><h3>Sign in to view cart</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back</button></div></div>'; return; }
+        var cart = PMS.getCart();
+        if (!cart.length) { el.innerHTML = '<section class="cart-page"><div class="container"><h1>\uD83D\uDED2 Your Cart</h1><div class="cart-empty"><div class="empty-icon">\uD83D\uDED2</div><h3>Cart is empty</h3><p>Browse products and add items.</p><button class="btn btn-primary" onclick="PMS.go(\'home\')">Browse</button></div></div></section>'; return; }
+        var total = PMS.cartTotal(), unp = PMS.hasUnpriced();
+        var itemsH = cart.map(function (it) {
+            return '<div class="cart-item" data-id="' + it.productId + '"><div class="cart-item-image">' + (it.image ? '<img src="' + PMS.esc(it.image) + '" alt="">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">\uD83D\uDCE6</div>') + '</div><div class="cart-item-info"><div class="cart-item-title">' + PMS.esc(it.name) + '</div><div class="cart-item-price">' + (it.price ? PMS.formatPrice(it.price) : '<span style="color:var(--accent)">Contact for Price</span>') + '</div><div class="cart-item-actions"><div class="qty-control"><button class="qm" data-id="' + it.productId + '">−</button><span>' + it.qty + '</span><button class="qp" data-id="' + it.productId + '">+</button></div><button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-left:auto" data-rm="' + it.productId + '">Remove</button></div></div></div>';
+        }).join('');
+        el.innerHTML = '<section class="cart-page"><div class="container"><h1>\uD83D\uDED2 Your Cart (' + PMS.cartCount() + ' items)</h1><div class="cart-grid"><div class="cart-items">' + itemsH + '</div>' +
+            '<div class="cart-summary"><h3>Order Summary</h3>' +
+            cart.filter(function (i) { return i.price; }).map(function (i) { return '<div class="cart-summary-row"><span>' + PMS.esc(i.name) + ' \u00D7 ' + i.qty + '</span><span>' + PMS.formatPrice(i.price * i.qty) + '</span></div>'; }).join('') +
+            (unp ? '<div class="cart-summary-row" style="color:var(--accent)"><span>Contact-price items</span><span>' + cart.filter(function (i) { return !i.price; }).length + '</span></div>' : '') +
+            '<div class="cart-summary-row total"><span>Estimated Total</span><span>' + (total > 0 ? PMS.formatPrice(total) : 'Contact for pricing') + '</span></div>' +
+            '<button class="btn btn-primary btn-lg" id="place-btn">\uD83D\uDCE6 Place Order</button>' +
+            '<button class="btn btn-whatsapp" id="wa-btn" style="margin-top:8px">\uD83D\uDCAC Order via WhatsApp</button>' +
+            '<button class="btn btn-ghost" id="clr-btn" style="margin-top:8px;color:var(--danger);width:100%">Clear Cart</button>' +
+            '</div></div></div></section>';
+        // Bindings
+        el.querySelectorAll('.qm').forEach(function (b) { b.onclick = function () { var c = PMS.getCart(), it = c.find(function (i) { return i.productId === b.dataset.id; }); if (it) PMS.updateCartQty(b.dataset.id, it.qty - 1); PMS.renderCart(el); }; });
+        el.querySelectorAll('.qp').forEach(function (b) { b.onclick = function () { var c = PMS.getCart(), it = c.find(function (i) { return i.productId === b.dataset.id; }); if (it) PMS.updateCartQty(b.dataset.id, it.qty + 1); PMS.renderCart(el); }; });
+        el.querySelectorAll('[data-rm]').forEach(function (b) { b.onclick = function () { PMS.removeFromCart(b.dataset.rm); PMS.toast('Removed.', 'info'); PMS.renderCart(el); }; });
+        document.getElementById('clr-btn').onclick = function () { if (confirm('Clear cart?')) { PMS.clearCart(); PMS.renderCart(el); } };
+        document.getElementById('wa-btn').onclick = function () { sendWA(); };
+        document.getElementById('place-btn').onclick = function () { placeOrder(el); };
+    };
+
+    function sendWA(ordId) {
+        var u = PMS.currentUser, cart = PMS.getCart(), total = PMS.cartTotal();
+        var msg = '\uD83D\uDED2 *New Order' + (ordId ? ' #' + ordId.substring(0, 8).toUpperCase() : '') + '*\n\n*Customer:* ' + (u ? (u.user_metadata.full_name || '') : '') + '\n*Email:* ' + (u ? u.email : '') + '\n\n*Items:*\n';
+        cart.forEach(function (i) { msg += '\u2022 ' + i.name + ' \u00D7 ' + i.qty + (i.price ? ' — ' + PMS.formatPrice(i.price * i.qty) : '') + '\n'; });
+        if (total > 0) msg += '\n*Total:* ' + PMS.formatPrice(total);
+        msg += '\n\nPlease confirm. Thank you! \uD83D\uDE4F';
+        window.open(PMS.waUrl(msg), '_blank');
+    }
+
+    function placeOrder(el) {
+        var user = PMS.currentUser, cart = PMS.getCart(), total = PMS.cartTotal();
+        var btn = document.getElementById('place-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Placing...'; }
+        PMS.createOrder({
+            user_id: user.id, customer_name: user.user_metadata.full_name || '', customer_email: user.email, items: cart.map(function (i) { return { productId: i.productId, name: i.name, price: i.price, qty: i.qty }; }), total: total > 0 ? total : null
+        }).then(function (ref) {
+            sendWA(ref.id);
+            PMS.clearCart();
+            PMS.toast('Order placed! \uD83C\uDF89', 'success');
+            el.querySelector('.cart-page .container').innerHTML = '<div class="empty-state" style="padding:40px 0"><div class="empty-icon" style="font-size:5rem;opacity:1">\uD83C\uDF89</div><h3 style="font-size:1.5rem">Order Placed!</h3><p>Your order has been sent to the store owner via WhatsApp.</p><button class="btn btn-primary" onclick="PMS.go(\'home\')">Continue Shopping</button></div>';
+        }).catch(function (err) { console.error(err); PMS.toast('Order failed. Try WhatsApp.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '\uD83D\uDCE6 Place Order'; } });
+    }
+
+    // ==================== ADMIN ====================
+    PMS.renderAdmin = function (el) {
+        if (!PMS.isOwner()) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDD12</div><h3>Access Denied</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back</button></div></div>'; return; }
+        var tab = 'products';
+        el.innerHTML = '<section class="admin-page"><div class="container"><div class="admin-header"><h1>\uD83D\uDCCB Admin Dashboard</h1><button class="btn btn-primary" id="add-btn">+ Add Product</button></div>' +
+            '<div class="admin-tabs"><button class="admin-tab active" data-t="products">Products</button><button class="admin-tab" data-t="orders">Orders</button></div>' +
+            '<div id="admin-c"></div></div></section>' +
+            '<div class="modal-overlay" id="pf-modal"><div class="modal-box" style="max-width:700px"><div class="modal-box-header"><h3 id="pf-title">Add Product</h3><button class="modal-close" id="pf-close">\u2715</button></div><div class="modal-box-body"><form id="pf-form">' +
+            '<div class="form-grid">' +
+            '<div class="form-group full-width"><label class="form-label">Name *</label><input class="form-input" id="pf-n" required placeholder="Product name"></div>' +
+            '<div class="form-group"><label class="form-label">Category *</label><select class="form-select" id="pf-cat" required><option value="">Select</option></select></div>' +
+            '<div class="form-group"><label class="form-label">Brand <span class="optional">(opt)</span></label><input class="form-input" id="pf-br" placeholder="Brand"></div>' +
+            '<div class="form-group"><label class="form-label">Price \u20B9 <span class="optional">(opt)</span></label><input type="number" class="form-input" id="pf-pr" placeholder="0" min="0"></div>' +
+            '<div class="form-group"><label class="form-label">MRP \u20B9 <span class="optional">(opt)</span></label><input type="number" class="form-input" id="pf-mrp" placeholder="0" min="0"></div>' +
+            '<div class="form-group full-width"><label class="form-label">Description *</label><textarea class="form-textarea" id="pf-desc" required placeholder="Description"></textarea></div>' +
+            '<div class="form-group full-width"><label class="form-label">Product Images</label>' +
+            '<div class="image-upload-area" id="img-area"><div class="upload-icon">\uD83D\uDCF8</div><p>Click or drag to upload photos (max 4)</p><input type="file" id="pf-files" multiple accept="image/*" style="display:none"></div>' +
+            '<div class="image-preview-grid" id="img-prev"></div>' +
+            '</div>' +
+            '<div class="form-group"><label class="form-label">In Stock</label><label class="toggle-switch"><input type="checkbox" id="pf-stock" checked><div class="toggle-track"></div><span class="toggle-label">Available</span></label></div>' +
+            '<div class="form-group full-width"><label class="form-label">Specs <span class="optional">(Key: Value, one per line)</span></label><textarea class="form-textarea" id="pf-specs" placeholder="Power: 900W" style="min-height:70px"></textarea></div>' +
+            '</div>' +
+            '<div class="form-actions"><button type="button" class="btn btn-ghost" id="pf-cancel">Cancel</button><button type="submit" class="btn btn-primary" id="pf-save">Save</button></div>' +
+            '</form></div></div></div>' +
+            '<div class="modal-overlay" id="del-modal"><div class="modal-box" style="max-width:400px"><div class="modal-box-header"><h3>Delete Product</h3><button class="modal-close" id="del-close">\u2715</button></div><div class="modal-box-body"><p>Delete <strong id="del-name"></strong>?</p></div><div class="modal-box-footer"><button class="btn btn-ghost" id="del-no">Cancel</button><button class="btn btn-danger" id="del-yes">Delete</button></div></div></div>';
+
+        // Tab switching
+        el.querySelectorAll('.admin-tab').forEach(function (t) {
+            t.onclick = function () { tab = t.dataset.t; el.querySelectorAll('.admin-tab').forEach(function (x) { x.classList.remove('active'); }); t.classList.add('active'); loadTab(); };
+        });
+
+        // Images: can be existing URLs or new files awaiting upload
+        var imgItems = []; // { type:'url', url:'...' } or { type:'file', file:File, preview:'data:...' }
+        var editProd = null;
+
+        document.getElementById('add-btn').onclick = function () { openForm(); };
+        document.getElementById('pf-close').onclick = closeForm;
+        document.getElementById('pf-cancel').onclick = closeForm;
+        document.getElementById('pf-modal').onclick = function (e) { if (e.target === e.currentTarget) closeForm(); };
+        document.getElementById('del-close').onclick = closeDel;
+        document.getElementById('del-no').onclick = closeDel;
+        document.getElementById('del-modal').onclick = function (e) { if (e.target === e.currentTarget) closeDel(); };
+        document.getElementById('pf-form').onsubmit = submitForm;
+
+        // File upload area
+        var uploadArea = document.getElementById('img-area');
+        var fileInput = document.getElementById('pf-files');
+        uploadArea.onclick = function () { fileInput.click(); };
+        uploadArea.ondragover = function (e) { e.preventDefault(); uploadArea.style.borderColor = 'var(--primary)'; };
+        uploadArea.ondragleave = function () { uploadArea.style.borderColor = ''; };
+        uploadArea.ondrop = function (e) { e.preventDefault(); uploadArea.style.borderColor = ''; handleFiles(e.dataTransfer.files); };
+        fileInput.onchange = function () { handleFiles(fileInput.files); fileInput.value = ''; };
+
+        function handleFiles(files) {
+            Array.from(files).forEach(function (f) {
+                if (imgItems.length >= 4) { PMS.toast('Max 4 images.', 'warning'); return; }
+                if (!f.type.startsWith('image/')) return;
+                var r = new FileReader();
+                r.onload = function (e) { imgItems.push({ type: 'file', file: f, preview: e.target.result }); renderPrev(); };
+                r.readAsDataURL(f);
+            });
+        }
+
+        function renderPrev() {
+            var c = document.getElementById('img-prev'); if (!c) return;
+            c.innerHTML = imgItems.map(function (im, i) {
+                var src = im.type === 'url' ? im.url : im.preview;
+                return '<div class="image-preview"><img src="' + PMS.esc(src) + '" onerror="this.style.opacity=0.3"><button type="button" class="remove-btn" data-i="' + i + '">\u2715</button></div>';
+            }).join('');
+            c.querySelectorAll('.remove-btn').forEach(function (b) { b.onclick = function () { imgItems.splice(parseInt(b.dataset.i), 1); renderPrev(); }; });
+        }
+
+        function openForm(product) {
+            editProd = product; imgItems = [];
+            PMS.getCategories().catch(function () { return PMS.CATEGORIES; }).then(function (cats) {
+                var sel = document.getElementById('pf-cat');
+                sel.innerHTML = '<option value="">Select</option>' + cats.map(function (c) { return '<option value="' + PMS.esc(c) + '">' + PMS.esc(c) + '</option>'; }).join('') + '<option value="__new">+ New Category</option>';
+                sel.onchange = function () { if (sel.value === '__new') { var n = prompt('New category:'); if (n && n.trim()) { var o = document.createElement('option'); o.value = n.trim(); o.textContent = n.trim(); o.selected = true; sel.insertBefore(o, sel.lastElementChild); } else sel.value = ''; } };
+                if (product) {
+                    document.getElementById('pf-title').textContent = 'Edit Product';
+                    document.getElementById('pf-save').textContent = 'Update';
+                    document.getElementById('pf-n').value = product.name || '';
+                    sel.value = product.category || '';
+                    document.getElementById('pf-br').value = product.brand || '';
+                    document.getElementById('pf-pr').value = product.price || '';
+                    document.getElementById('pf-mrp').value = product.mrp || '';
+                    document.getElementById('pf-desc').value = product.description || '';
+                    document.getElementById('pf-stock').checked = product.in_stock !== false;
+                    document.getElementById('pf-specs').value = product.specifications ? Object.entries(product.specifications).map(function (kv) { return kv[0] + ': ' + kv[1]; }).join('\n') : '';
+                    // Load existing images
+                    imgItems = (product.images || []).map(function (u) { return { type: 'url', url: u }; });
+                    renderPrev();
+                } else {
+                    document.getElementById('pf-title').textContent = 'Add Product';
+                    document.getElementById('pf-save').textContent = 'Save';
+                    document.getElementById('pf-form').reset();
+                    document.getElementById('pf-stock').checked = true;
+                    document.getElementById('img-prev').innerHTML = '';
+                }
+                document.getElementById('pf-modal').classList.add('open');
+            });
+        }
+        function closeForm() { document.getElementById('pf-modal').classList.remove('open'); editProd = null; imgItems = []; }
+
+        function submitForm(e) {
+            e.preventDefault();
+            var btn = document.getElementById('pf-save'); btn.disabled = true; btn.textContent = 'Saving...';
+            var specs = {};
+            document.getElementById('pf-specs').value.trim().split('\n').forEach(function (l) { var ci = l.indexOf(':'); if (ci > 0) { var k = l.substring(0, ci).trim(), v = l.substring(ci + 1).trim(); if (k && v) specs[k] = v; } });
+            var data = {
+                name: document.getElementById('pf-n').value.trim(),
+                category: document.getElementById('pf-cat').value,
+                brand: document.getElementById('pf-br').value.trim(),
+                price: document.getElementById('pf-pr').value ? parseFloat(document.getElementById('pf-pr').value) : null,
+                mrp: document.getElementById('pf-mrp').value ? parseFloat(document.getElementById('pf-mrp').value) : null,
+                description: document.getElementById('pf-desc').value.trim(),
+                in_stock: document.getElementById('pf-stock').checked,
+                specifications: specs
+            };
+
+            // Collect existing URLs and new files to upload
+            var existingUrls = imgItems.filter(function (i) { return i.type === 'url'; }).map(function (i) { return i.url; });
+            var newFiles = imgItems.filter(function (i) { return i.type === 'file'; }).map(function (i) { return i.file; });
+
+            var savePromise;
+            if (editProd) {
+                // Upload new files, merge with existing URLs, then update
+                savePromise = (newFiles.length > 0 ? PMS.uploadImages(newFiles, editProd.id) : Promise.resolve([])).then(function (newUrls) {
+                    data.images = existingUrls.concat(newUrls);
+                    return PMS.updateProduct(editProd.id, data);
+                });
+            } else {
+                // Create product first, then upload images and update
+                savePromise = PMS.addProduct(data).then(function (product) {
+                    if (newFiles.length > 0) {
+                        return PMS.uploadImages(newFiles, product.id).then(function (urls) {
+                            return PMS.updateProduct(product.id, { images: existingUrls.concat(urls) });
+                        });
+                    } else if (existingUrls.length > 0) {
+                        return PMS.updateProduct(product.id, { images: existingUrls });
+                    }
+                });
+            }
+
+            savePromise.then(function () { PMS.toast(editProd ? 'Updated!' : 'Added!', 'success'); closeForm(); loadTab(); })
+                .catch(function (err) { console.error(err); PMS.toast('Save failed.', 'error'); })
+                .finally(function () { btn.disabled = false; btn.textContent = editProd ? 'Update' : 'Save'; });
+        }
+
+        var delId;
+        function openDel(id, name) {
+            delId = id; document.getElementById('del-name').textContent = name; document.getElementById('del-modal').classList.add('open');
+            document.getElementById('del-yes').onclick = function () { PMS.deleteProduct(delId).then(function () { PMS.toast('Deleted.', 'success'); closeDel(); loadTab(); }).catch(function () { PMS.toast('Delete failed.', 'error'); }); };
+        }
+        function closeDel() { document.getElementById('del-modal').classList.remove('open'); }
+
+        function loadTab() {
+            var c = document.getElementById('admin-c');
+            if (tab === 'products') loadProds(c); else loadOrds(c);
+        }
+
+        function loadProds(c) {
+            c.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+            PMS.getProducts().then(function (prods) {
+                if (!prods.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCE6</div><h3>No products</h3><button class="btn btn-primary" id="seed-btn">\uD83C\uDF31 Import Demo</button></div>'; document.getElementById('seed-btn').onclick = function () { PMS.seedProducts().then(function () { PMS.toast('Imported!', 'success'); loadProds(c); }); }; return; }
+                c.innerHTML = '<div class="admin-product-list">' + prods.map(function (p) {
+                    return '<div class="admin-product-item"><div class="admin-product-thumb">' + (p.images && p.images[0] ? '<img src="' + PMS.esc(p.images[0]) + '" alt="">' : '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">\uD83D\uDCE6</div>') + '</div><div class="admin-product-info"><h4>' + PMS.esc(p.name) + '</h4><div class="meta">' + PMS.esc(p.category || '') + ' \u00B7 ' + (p.price ? PMS.formatPrice(p.price) : 'No price') + ' \u00B7 <span class="stock-indicator ' + (p.in_stock ? 'stock-in' : 'stock-out') + '" style="display:inline-flex"><span class="stock-dot"></span>' + (p.in_stock ? 'In Stock' : 'Out') + '</span></div></div><div class="admin-product-actions"><button class="btn btn-outline btn-sm ed-btn" data-id="' + p.id + '">\u270F\uFE0F Edit</button><button class="btn btn-sm dl-btn" style="color:var(--danger)" data-id="' + p.id + '" data-nm="' + PMS.esc(p.name) + '">\uD83D\uDDD1\uFE0F</button></div></div>';
+                }).join('') + '</div>';
+                c.querySelectorAll('.ed-btn').forEach(function (b) { b.onclick = function () { var pr = prods.find(function (x) { return x.id === b.dataset.id; }); if (pr) openForm(pr); }; });
+                c.querySelectorAll('.dl-btn').forEach(function (b) { b.onclick = function () { openDel(b.dataset.id, b.dataset.nm); }; });
+            });
+        }
+
+        function loadOrds(c) {
+            c.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+            PMS.getOrders().then(function (ords) {
+                if (!ords.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCCB</div><h3>No orders yet</h3></div>'; return; }
+                c.innerHTML = '<div class="order-list">' + ords.map(function (o) {
+                    return '<div class="order-card"><div class="order-card-header"><div><span class="order-id">#' + o.id.substring(0, 8).toUpperCase() + '</span> <span class="order-date">' + PMS.formatDateTime(o.created_at) + '</span></div><div style="display:flex;gap:8px;align-items:center"><span class="order-status order-status-' + (o.status || 'new') + '">' + (o.status || 'new') + '</span><select class="form-select" style="padding:4px 8px;font-size:.78rem" data-oid="' + o.id + '"><option value="new"' + (o.status === 'new' ? ' selected' : '') + '>New</option><option value="processing"' + (o.status === 'processing' ? ' selected' : '') + '>Processing</option><option value="completed"' + (o.status === 'completed' ? ' selected' : '') + '>Completed</option></select></div></div><div class="order-card-body"><div class="order-customer"><strong>' + PMS.esc(o.customer_name || '') + '</strong>' + (o.customer_email ? ' \u00B7 ' + PMS.esc(o.customer_email) : '') + '</div><div class="order-items-list">' + (o.items || []).map(function (i) { return PMS.esc(i.name) + ' \u00D7 ' + i.qty + (i.price ? ' \u00B7 ' + PMS.formatPrice(i.price) : ''); }).join('<br>') + '</div>' + (o.total ? '<div style="margin-top:8px;font-weight:700">Total: ' + PMS.formatPrice(o.total) + '</div>' : '') + '</div></div>';
+                }).join('') + '</div>';
+                c.querySelectorAll('[data-oid]').forEach(function (s) { s.onchange = function () { PMS.updateOrderStatus(s.dataset.oid, s.value).then(function () { PMS.toast('Status updated.', 'success'); loadOrds(c); }); }; });
+            });
+        }
+
+        loadTab();
+    };
+
+})(PMS);

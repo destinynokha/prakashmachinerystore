@@ -1,752 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prakash Machinery Store | INGCO Tools, Welding Machines & Equipment</title>
-    <meta name="description" content="Your trusted partner for quality machinery tools and equipment. We specialize in INGCO tools, welding machines, cutting wheels, angle grinders and more.">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .logo-container {
-            background: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .logo-container img {
-            height: 60px;
-            width: auto;
-        }
-
-        .header-contact {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .header-contact a {
-            color: white;
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: opacity 0.3s;
-        }
-
-        .header-contact a:hover {
-            opacity: 0.8;
-        }
-
-        .hero {
-            background: linear-gradient(rgba(30, 60, 114, 0.8), rgba(30, 60, 114, 0.9)), 
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23cccccc" width="1200" height="600"/><text x="50%" y="50%" font-size="40" fill="%23666666" text-anchor="middle" dominant-baseline="middle">    </text></svg>');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 80px 20px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: #ff6b35;
-            color: white;
-            padding: 15px 40px;
-            text-decoration: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
-            cursor: pointer;
-            border: none;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .products {
-            padding: 60px 20px;
-            background: #f8f9fa;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.2rem;
-            color: #1e3c72;
-            margin-bottom: 3rem;
-            position: relative;
-            padding-bottom: 15px;
-        }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 4px;
-            background: #ff6b35;
-            border-radius: 2px;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-
-        .product-image {
-            width: 100%;
-            height: 220px;
-            background: #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            color: #666;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .product-info {
-            padding: 20px;
-        }
-
-        .product-info h3 {
-            color: #1e3c72;
-            margin-bottom: 10px;
-            font-size: 1.3rem;
-        }
-
-        .product-info p {
-            color: #666;
-            font-size: 0.95rem;
-        }
-
-        .about {
-            padding: 60px 20px;
-            background: white;
-        }
-
-        .about-content {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .about-content p {
-            font-size: 1.1rem;
-            color: #555;
-            line-height: 1.8;
-            margin-bottom: 1rem;
-        }
-
-        .contact {
-            padding: 60px 20px;
-            background: #f8f9fa;
-        }
-
-        .contact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            margin-top: 40px;
-        }
-
-        .contact-info {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .contact-info h3 {
-            color: #1e3c72;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            gap: 15px;
-        }
-
-        .contact-icon {
-            color: #ff6b35;
-            font-size: 1.3rem;
-            min-width: 24px;
-        }
-
-        .contact-item p {
-            margin: 0;
-            color: #555;
-        }
-
-        .contact-item a {
-            color: #1e3c72;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .contact-item a:hover {
-            color: #ff6b35;
-        }
-
-        .contact-methods {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .contact-methods h3 {
-            color: #1e3c72;
-            margin-bottom: 25px;
-            font-size: 1.5rem;
-            text-align: center;
-        }
-
-        .method-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .method-btn {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 20px;
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #333;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .method-btn:hover {
-            background: #e9ecef;
-            border-color: #ff6b35;
-            transform: translateX(5px);
-        }
-
-        .method-icon {
-            font-size: 2rem;
-            min-width: 40px;
-            text-align: center;
-        }
-
-        .method-text h4 {
-            margin: 0 0 5px 0;
-            color: #1e3c72;
-            font-size: 1.1rem;
-        }
-
-        .method-text p {
-            margin: 0;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .map-container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .map-container iframe {
-            width: 100%;
-            height: 350px;
-            border: none;
-            border-radius: 8px;
-        }
-
-        footer {
-            background: #1e3c72;
-            color: white;
-            text-align: center;
-            padding: 30px 20px;
-        }
-
-        footer p {
-            margin-bottom: 10px;
-        }
-
-        #contactModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        #contactModal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 25px 30px;
-            border-radius: 15px 15px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .close-modal {
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            line-height: 1;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-        }
-
-        .close-modal:hover {
-            opacity: 0.8;
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .contact-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 6px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #ff6b35;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        .submit-btn {
-            background: #ff6b35;
-            color: white;
-            padding: 15px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .submit-btn:hover {
-            background: #e55a2b;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-        }
-
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
-            .hero h1 {
-                font-size: 1.8rem;
-            }
-
-            .hero p {
-                font-size: 1.1rem;
-            }
-
-            .section-title {
-                font-size: 1.8rem;
-            }
-
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <meta name="description"
+        content="Your trusted partner for quality machinery tools and equipment. Browse our catalog, save favorites, and place orders online.">
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
+
 <body>
-    <header>
-        <div class="header-content">
-            <div class="logo-container">
-                <img src="img/logo.png" alt="Prakash Machinery Store Logo" onerror="this.src='img/logo.jpg'">
-            </div>
-            <div class="header-contact">
-                <a href="tel:+919414548021">📞 +91 94145 48021</a>
-                <a href="mailto:navneetsharma94145@gmail.com">✉️ Contact Us</a>
-            </div>
-        </div>
-    </header>
-
-    <section class="hero">
-        <div class="container">
-            <h1>Prakash Machinery Store</h1>
-            <p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>
-            <button class="cta-button" onclick="openContactModal()">Get In Touch</button>
-        </div>
-    </section>
-
-    <section class="products" id="products">
-        <div class="container">
-            <h2 class="section-title">Our Products</h2>
-            <div class="products-grid">
-                <div class="product-card">
-                    <div class="product-image">
-    <img src="img/img1.png" alt="INGCO Tools" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-                    <div class="product-info">
-                        <h3>INGCO Tools</h3>
-                        <p>Complete range of INGCO power tools and hand tools. Premium quality tools for professional and industrial applications with warranty support.</p>
-                    </div>
+    <div id="app">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <a href="#" class="navbar-logo" id="navbar-logo">
+                    <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'">
+                    <span>Prakash Machinery</span>
+                </a>
+                <div class="navbar-search">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="Search products...">
                 </div>
-                <div class="product-card">
-                    <div class="product-image">
-    <img src="img/img2.png" alt="Welding Machines" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-                    <div class="product-info">
-                        <h3>Welding Machines</h3>
-                        <p>Professional welding equipment for all types of welding work. Arc welders, MIG welders, and TIG welders with accessories and consumables.</p>
-                    </div>
-                </div>
-                <div class="product-card">
-                    <div class="product-image">
-    <img src="img/img3.png" alt="Cutting Wheels" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-                    <div class="product-info">
-                        <h3>Cutting Wheels</h3>
-                        <p>High-quality cutting discs and grinding wheels for metal, stone, and concrete. Durable and safe cutting solutions for all applications.</p>
-                    </div>
-                </div>
-                <div class="product-card">
-                    <div class="product-image">
-    <img src="img/img4.png" alt="Angle Grinders" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-                    <div class="product-info">
-                        <h3>Angle Grinders</h3>
-                        <p>Powerful angle grinders in various sizes. Perfect for cutting, grinding, and polishing with safety features and ergonomic design.</p>
-                    </div>
-                </div>
-                <div class="product-card">
-                    <div class="product-image">
-    <img src="img/img5.png" alt="Power Tools" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-                    <div class="product-info">
-                        <h3>Power Tools</h3>
-                        <p>Wide selection of drills, sanders, saws, and other power tools. Professional-grade equipment for construction and workshop use.</p>
-                    </div>
-                </div>
-                <div class="product-card">
-                   <div class="product-image">
-    <img src="img/img6.png" alt="Machinery Equipment" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-                    <div class="product-info">
-                        <h3>Machinery Equipment</h3>
-                        <p>Industrial machinery and equipment for various applications. Quality products with technical support and spare parts availability.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="about" id="about">
-        <div class="container">
-            <h2 class="section-title">About Us</h2>
-            <div class="about-content">
-                <p>Prakash Machinery Store is your trusted partner for quality tools and machinery equipment. With years of experience in the industry, we specialize in providing premium INGCO tools, welding machines, angle grinders, cutting wheels, and a complete range of power tools and equipment.</p>
-                <p>Our commitment to quality products, competitive pricing, and excellent customer service has made us a preferred choice for professionals, contractors, and industries. We maintain a comprehensive inventory of genuine products and ensure prompt delivery to meet your project deadlines.</p>
-                <p>From INGCO hand tools to industrial welding equipment, power tools to cutting solutions, we offer reliable products backed by technical expertise and exceptional after-sales support.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="contact" id="contact">
-        <div class="container">
-            <h2 class="section-title">Contact Us</h2>
-            <div class="contact-grid">
-                <div class="contact-methods">
-                    <h3>Choose Your Preferred Way to Contact</h3>
-                    <div class="method-buttons">
-                        <a href="https://wa.me/919414548021?text=Hello%20Prakash%20Machinery%20Store,%20I'm%20interested%20in%20your%20products" target="_blank" class="method-btn">
-                            <div class="method-icon">💬</div>
-                            <div class="method-text">
-                                <h4>WhatsApp</h4>
-                                <p>Quick response via WhatsApp chat</p>
+                <div class="navbar-actions">
+                    <button class="nav-btn nav-btn-icon mobile-menu-btn" id="mobile-search-toggle"
+                        title="Search">🔍</button>
+                    <a href="#" class="nav-btn hidden" id="home-link">🏠 <span>Store</span></a>
+                    <a href="#" class="nav-btn hidden" id="cart-link">🛒 <span>Cart</span><span class="badge"
+                            id="cart-badge" style="display:none">0</span></a>
+                    <a href="#" class="nav-btn hidden" id="admin-link">📋 <span>Admin</span></a>
+                    <button class="nav-btn btn-login" id="login-btn">Sign in with Google</button>
+                    <div class="hidden" id="user-menu-container" style="position:relative;">
+                        <img class="user-avatar" id="user-avatar-btn" src="" alt="User">
+                        <div class="user-menu" id="user-menu">
+                            <div class="user-menu-header">
+                                <div class="name"></div>
+                                <div class="email"></div>
                             </div>
-                        </a>
-                        <a href="mailto:navneetsharma94145@gmail.com?subject=Inquiry%20from%20Website&body=Hello,%0D%0A%0D%0AI'm%20interested%20in%20your%20products." class="method-btn">
-                            <div class="method-icon">✉️</div>
-                            <div class="method-text">
-                                <h4>Email Us</h4>
-                                <p>Send us a detailed inquiry</p>
-                            </div>
-                        </a>
-                        <a href="tel:+919414548021" class="method-btn">
-                            <div class="method-icon">📞</div>
-                            <div class="method-text">
-                                <h4>Call Us</h4>
-                                <p>Speak directly with our team</p>
-                            </div>
-                        </a>
-                        <button onclick="showContactForm()" class="method-btn" style="border: none; width: 100%;">
-                            <div class="method-icon">📝</div>
-                            <div class="method-text">
-                                <h4>Fill Contact Form</h4>
-                                <p>Send us your details and requirements</p>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <div class="contact-info">
-                    <h3>Get In Touch</h3>
-                    <div class="contact-item">
-                        <span class="contact-icon">📍</span>
-                        <p>Khasra No. 571, Plot No. 49<br>Kalu Khan Ki Bari, Behind Laxmi Tara Cinema<br>Nagaur, Rajasthan - 341001</p>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">📞</span>
-                        <p><a href="tel:+919414548021">+91 94145 48021</a></p>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">✉️</span>
-                        <p><a href="mailto:navneetsharma94145@gmail.com">navneetsharma94145@gmail.com</a></p>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">💬</span>
-                        <p><a href="https://wa.me/919414548021" target="_blank">WhatsApp: +91 94145 48021</a></p>
-                    </div>
-                    <div class="contact-item">
-                        <span class="contact-icon">🕒</span>
-                        <p>Monday - Saturday: 9:00 AM - 7:00 PM<br>Sunday: Closed</p>
+                            <button class="user-menu-item" id="my-orders-btn">📦 My Orders</button>
+                            <button class="user-menu-item danger" id="sign-out-btn">🚪 Sign Out</button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="map-container" style="margin-top: 40px;">
-                <h3 style="color: #1e3c72; margin-bottom: 15px;">Our Location</h3>
-                <iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3532.8!2d73.74947030723422!3d27.19548725126207!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjfCsDExJzQzLjgiTiA3M8KwNDQnNTguMSJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin" allowfullscreen="" loading="lazy"></iframe>
-            </div>
-        </div>
-    </section>
+        </nav>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Prakash Machinery Store. All Rights Reserved.</p>
-            <p>Website: www.prakashmachinerystore.com</p>
-        </div>
-    </footer>
+        <!-- Main Content Area -->
+        <main id="app-content">
+            <div class="loading-screen">
+                <div class="spinner"></div>
+                <p>Loading store...</p>
+            </div>
+        </main>
 
-    <div id="contactModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Contact Form</h3>
-                <button class="close-modal" onclick="closeContactModal()">&times;</button>
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="container">
+                <p>&copy; 2024 Prakash Machinery Store. All Rights Reserved.</p>
+                <p>📧 <a href="mailto:orders@prakashmachinerystore.com">orders@prakashmachinerystore.com</a> · 📞 <a
+                        href="tel:+919414548021">+91 94145 48021</a></p>
             </div>
-            <div class="modal-body">
-                <div class="contact-form">
-                    <div class="form-group">
-                        <label for="name">Your Name *</label>
-                        <input type="text" id="name" required placeholder="Enter your name">
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone Number *</label>
-                        <input type="tel" id="phone" required placeholder="Enter your phone number">
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="Enter your email (optional)">
-                    </div>
-                    <div class="form-group">
-                        <label for="message">Your Message *</label>
-                        <textarea id="message" required placeholder="Tell us about your requirements"></textarea>
-                    </div>
-                    <button class="submit-btn" onclick="submitContactForm()">Send Message</button>
-                </div>
-            </div>
-        </div>
+        </footer>
     </div>
 
-    <script>
-        function openContactModal() {
-            document.getElementById('contactModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
 
-        function closeContactModal() {
-            document.getElementById('contactModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function showContactForm() {
-            openContactModal();
-        }
-
-        function submitContactForm() {
-            const name = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-            const email = document.getElementById('email').value;
-            const message = document.getElementById('message').value;
-
-            if (!name || !phone || !message) {
-                alert('Please fill in all required fields');
-                return;
-            }
-
-            const whatsappMessage = `Hello Prakash Machinery Store,%0A%0AName: ${encodeURIComponent(name)}%0APhone: ${encodeURIComponent(phone)}${email ? '%0AEmail: ' + encodeURIComponent(email) : ''}%0A%0AMessage:%0A${encodeURIComponent(message)}`;
-            
-            window.open(`https://wa.me/919414548021?text=${whatsappMessage}`, '_blank');
-            
-            closeContactModal();
-            
-            document.getElementById('name').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('message').value = '';
-        }
-
-        document.getElementById('contactModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeContactModal();
-            }
-        });
-    </script>
+    <!-- App Scripts (order matters) -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/views.js"></script>
+    <script src="js/app.js"></script>
 </body>
+
 </html>
