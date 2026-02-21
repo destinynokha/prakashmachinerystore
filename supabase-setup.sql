@@ -70,6 +70,31 @@ alter table wishlists enable row level security;
 create policy "Users can manage own wishlists"
   on wishlists for all using (auth.uid() = user_id);
 
+-- ===== CATEGORIES TABLE =====
+create table categories (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null unique,
+  icon text default '',
+  sort_order int default 0,
+  created_at timestamptz default now()
+);
+
+alter table categories enable row level security;
+
+create policy "Categories are viewable by everyone"
+  on categories for select using (true);
+
+create policy "Authenticated users can manage categories"
+  on categories for all using (auth.role() = 'authenticated');
+
+-- Seed default categories
+insert into categories (name, sort_order) values
+  ('INGCO Tools', 1),
+  ('Welding Machines', 2),
+  ('Cutting Wheels', 3),
+  ('Angle Grinders', 4),
+  ('Power Tools', 5),
+  ('Machinery Equipment', 6);
 -- ===== STORAGE BUCKET =====
 -- Do this in the Supabase Dashboard (not in SQL Editor):
 -- 1. Go to Storage → New Bucket

@@ -1,60 +1,101 @@
-// ===== Views (Catalog, Product, Cart, Admin) =====
+// ===== Views (Home, Store, Product, Cart, Admin) =====
 (function (PMS) {
 
     var wishlistIds = [];
     var curCat = 'All', curSort = 'newest', curSearch = '';
 
-    // ==================== CATALOG ====================
-    PMS.renderCatalog = function (el) {
+    // ==================== HOME PAGE ====================
+    PMS.renderHome = function (el) {
+        el.innerHTML =
+            '<section class="hero-banner"><div class="container">' +
+            '<h1>Prakash Machinery Store</h1>' +
+            '<p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>' +
+            '<div class="hero-actions">' +
+            '<a href="#" onclick="event.preventDefault();PMS.go(\'store\')" class="btn btn-primary btn-lg">Browse Store</a>' +
+            '<a href="' + PMS.waUrl("Hello Prakash Machinery Store, I'm interested in your products") + '" target="_blank" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
+            '</div>' +
+            '</div></section>' +
+            '<section class="latest-section"><div class="container">' +
+            '<div class="section-header"><h2>\uD83C\uDD95 Latest Products</h2><a href="#" onclick="event.preventDefault();PMS.go(\'store\')" class="btn btn-outline btn-sm">View All \u2192</a></div>' +
+            '<div class="product-grid" id="latest-grid"></div>' +
+            '</div></section>' +
+            renderAbout();
+
+        // Load latest 6 products
+        var grid = document.getElementById('latest-grid');
+        PMS.skeletons(grid);
+        PMS.getLatestProducts(6).then(function (products) {
+            if (!products.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCE6</div><h3>No products yet</h3></div>'; return; }
+            grid.innerHTML = products.map(function (p) { return cardHTML(p); }).join('');
+            bindCards(grid);
+        }).catch(function () {
+            grid.innerHTML = '<div class="empty-state"><div class="empty-icon">\u26A0\uFE0F</div><h3>Failed to load</h3></div>';
+        });
+    };
+
+    // ==================== STORE PAGE ====================
+    PMS.renderStore = function (el) {
         var wlPromise = PMS.isLoggedIn() ? PMS.getWishlist(PMS.currentUser.id).catch(function () { return []; }) : Promise.resolve([]);
         wlPromise.then(function (wl) {
             wishlistIds = wl;
             el.innerHTML =
-                '<section class="hero-banner"><div class="container">' +
-                '<h1>Prakash Machinery Store</h1>' +
-                '<p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>' +
-                '<div class="hero-actions">' +
-                '<a href="#catalog-grid" class="btn btn-primary btn-lg">Browse Products</a>' +
-                '<a href="' + PMS.waUrl("Hello Prakash Machinery Store, I'm interested in your products") + '" target="_blank" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
+                '<section class="store-page"><div class="container"><div class="store-layout">' +
+                '<aside class="store-sidebar" id="store-sidebar"><h3 class="sidebar-title">\uD83D\uDCC2 Categories</h3><div class="sidebar-cats" id="sidebar-cats"></div></aside>' +
+                '<div class="store-main">' +
+                '<div class="store-toolbar">' +
+                '<div class="store-search"><input class="form-input" id="search-input-store" placeholder="\uD83D\uDD0D Search products...">' +
                 '</div>' +
-                '</div></section>' +
-                '<div class="filter-bar"><div class="filter-bar-inner" id="cat-filters"></div></div>' +
-                '<section class="catalog-section" id="catalog-grid"><div class="container">' +
+                '<select class="form-select" id="sort-sel-store"><option value="newest">Newest</option><option value="name">Name A-Z</option><option value="price-low">Price: Low-High</option><option value="price-high">Price: High-Low</option></select>' +
+                '</div>' +
                 '<div class="catalog-header"><h2 id="cat-title">All Products</h2><span class="catalog-count" id="cat-count"></span></div>' +
                 '<div class="product-grid" id="pgrid"></div>' +
                 '<div id="cat-empty" class="empty-state hidden"><div class="empty-icon">\uD83D\uDD0D</div><h3>No products found</h3><p>Try changing your search or filter.</p></div>' +
-                '</div></section>' +
-                renderAbout();
-            loadCats();
+                '</div></div></div></section>';
+
+            loadSidebarCats();
             loadGrid();
 
-            var si = document.getElementById('search-input');
+            var si = document.getElementById('search-input-store');
             if (si) si.oninput = PMS.debounce(function (e) { curSearch = e.target.value; loadGrid(); });
+
+            var ss = document.getElementById('sort-sel-store');
+            if (ss) { ss.value = curSort; ss.onchange = function () { curSort = ss.value; loadGrid(); }; }
+
+            // Also bind navbar search
+            var sn = document.getElementById('search-input');
+            if (sn) sn.oninput = PMS.debounce(function (e) { curSearch = e.target.value; if (si) si.value = curSearch; loadGrid(); });
         });
     };
 
-    function loadCats() {
-        var fc = document.getElementById('cat-filters');
-        if (!fc) return;
-        PMS.getCategories().catch(function () { return PMS.CATEGORIES; }).then(function (cats) {
-            var h = '<button class="filter-chip ' + (curCat === 'All' ? 'active' : '') + '" data-c="All">All</button>';
-            cats.forEach(function (c) { h += '<button class="filter-chip ' + (curCat === c ? 'active' : '') + '" data-c="' + PMS.esc(c) + '">' + PMS.esc(c) + '</button>'; });
-            h += '<div class="filter-sort"><select id="sort-sel"><option value="newest">Newest</option><option value="name">Name A-Z</option><option value="price-low">Price: Low-High</option><option value="price-high">Price: High-Low</option></select></div>';
-            fc.innerHTML = h;
-            fc.querySelectorAll('.filter-chip').forEach(function (chip) {
-                chip.onclick = function () { curCat = chip.dataset.c; fc.querySelectorAll('.filter-chip').forEach(function (c) { c.classList.remove('active'); }); chip.classList.add('active'); loadGrid(); };
+    function loadSidebarCats() {
+        var sc = document.getElementById('sidebar-cats');
+        if (!sc) return;
+        PMS.getCategories().then(function (cats) {
+            var h = '<button class="sidebar-cat-btn ' + (curCat === 'All' ? 'active' : '') + '" data-c="All">All Products</button>';
+            cats.forEach(function (c) {
+                h += '<button class="sidebar-cat-btn ' + (curCat === c.name ? 'active' : '') + '" data-c="' + PMS.esc(c.name) + '">' + PMS.esc(c.name) + '</button>';
             });
-            var ss = document.getElementById('sort-sel');
-            if (ss) { ss.value = curSort; ss.onchange = function () { curSort = ss.value; loadGrid(); }; }
+            sc.innerHTML = h;
+            sc.querySelectorAll('.sidebar-cat-btn').forEach(function (btn) {
+                btn.onclick = function () {
+                    curCat = btn.dataset.c;
+                    sc.querySelectorAll('.sidebar-cat-btn').forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    var ttl = document.getElementById('cat-title');
+                    if (ttl) ttl.textContent = curCat === 'All' ? 'All Products' : curCat;
+                    loadGrid();
+                };
+            });
+        }).catch(function () {
+            sc.innerHTML = '<p style="color:var(--text-muted);padding:8px">Loading...</p>';
         });
     }
 
     function loadGrid() {
-        var grid = document.getElementById('pgrid'), empty = document.getElementById('cat-empty'), cnt = document.getElementById('cat-count'), ttl = document.getElementById('cat-title');
+        var grid = document.getElementById('pgrid'), empty = document.getElementById('cat-empty'), cnt = document.getElementById('cat-count');
         if (!grid) return;
         PMS.skeletons(grid);
         PMS.getProducts({ category: curCat, sortBy: curSort, search: curSearch }).then(function (products) {
-            if (ttl) ttl.textContent = curCat === 'All' ? 'All Products' : curCat;
             if (cnt) cnt.textContent = products.length + ' product' + (products.length !== 1 ? 's' : '');
             if (!products.length) { grid.innerHTML = ''; if (empty) empty.classList.remove('hidden'); return; }
             if (empty) empty.classList.add('hidden');
@@ -137,7 +178,7 @@
         el.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Loading...</p></div>';
         PMS.getProduct(pid).then(function (p) {
             if (!p) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDCE6</div><h3>Product Not Found</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back to Store</button></div></div>'; return; }
-            var wlP = PMS.isLoggedIn() ? PMS.getWishlist(PMS.currentUser.uid).catch(function () { return []; }) : Promise.resolve([]);
+            var wlP = PMS.isLoggedIn() ? PMS.getWishlist(PMS.currentUser.id).catch(function () { return []; }) : Promise.resolve([]);
             wlP.then(function (wl) {
                 var isWl = wl.includes(pid);
                 var price = PMS.formatPrice(p.price), mrp = PMS.formatPrice(p.mrp), disc = PMS.calcDiscount(p.price, p.mrp);
@@ -152,7 +193,7 @@
                 }
                 var waMsg = "Hi, I'm interested in: " + p.name + (price ? ' (' + price + ')' : '') + ". Please share details.";
                 el.innerHTML = '<section class="product-detail"><div class="container">' +
-                    '<div class="breadcrumb"><a href="#" onclick="event.preventDefault();PMS.go(\'home\')">Home</a><span class="sep">\u203A</span><span>' + PMS.esc(p.name) + '</span></div>' +
+                    '<div class="breadcrumb"><a href="#" onclick="event.preventDefault();PMS.go(\'home\')">Home</a><span class="sep">\u203A</span><a href="#" onclick="event.preventDefault();PMS.go(\'store\')">Store</a><span class="sep">\u203A</span><span>' + PMS.esc(p.name) + '</span></div>' +
                     '<div class="product-detail-grid"><div class="product-gallery"><div class="gallery-main" id="gmain">' + (mainImg ? '<img src="' + PMS.esc(mainImg) + '" alt="' + PMS.esc(p.name) + '">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:5rem">\uD83D\uDCE6</div>') + '</div>' +
                     (imgs.length > 1 ? '<div class="gallery-thumbs">' + imgs.map(function (im, i) { return '<div class="gallery-thumb ' + (i === 0 ? 'active' : '') + '" data-src="' + PMS.esc(im) + '"><img src="' + PMS.esc(im) + '" alt="Thumb"></div>'; }).join('') + '</div>' : '') +
                     '</div>' +
@@ -170,19 +211,16 @@
                     '<button class="btn btn-outline" id="d-wl">' + (isWl ? '\u2764\uFE0F Saved' : '\uD83E\uDD0D Save') + '</button>' +
                     '</div></div></div></div></section>';
 
-                // Bind thumbs
                 el.querySelectorAll('.gallery-thumb').forEach(function (th) {
                     th.onclick = function () { document.getElementById('gmain').innerHTML = '<img src="' + th.dataset.src + '" alt="">'; el.querySelectorAll('.gallery-thumb').forEach(function (t) { t.classList.remove('active'); }); th.classList.add('active'); };
                 });
-                // Bind cart
                 var cb = document.getElementById('d-cart');
                 if (cb) cb.onclick = function () { PMS.addToCartItem(p); };
-                // Bind wishlist
                 var wb = document.getElementById('d-wl');
                 if (wb) wb.onclick = function () {
                     if (!PMS.isLoggedIn()) { PMS.toast('Sign in to save.', 'warning'); return; }
-                    if (isWl) { PMS.removeFromWishlist(PMS.currentUser.uid, pid); isWl = false; wb.innerHTML = '\uD83E\uDD0D Save'; PMS.toast('Removed.', 'info'); }
-                    else { PMS.addToWishlist(PMS.currentUser.uid, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }
+                    if (isWl) { PMS.removeFromWishlist(PMS.currentUser.id, pid); isWl = false; wb.innerHTML = '\uD83E\uDD0D Save'; PMS.toast('Removed.', 'info'); }
+                    else { PMS.addToWishlist(PMS.currentUser.id, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }
                 };
             });
         });
@@ -192,7 +230,7 @@
     PMS.renderCart = function (el) {
         if (!PMS.isLoggedIn()) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDD12</div><h3>Sign in to view cart</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back</button></div></div>'; return; }
         var cart = PMS.getCart();
-        if (!cart.length) { el.innerHTML = '<section class="cart-page"><div class="container"><h1>\uD83D\uDED2 Your Cart</h1><div class="cart-empty"><div class="empty-icon">\uD83D\uDED2</div><h3>Cart is empty</h3><p>Browse products and add items.</p><button class="btn btn-primary" onclick="PMS.go(\'home\')">Browse</button></div></div></section>'; return; }
+        if (!cart.length) { el.innerHTML = '<section class="cart-page"><div class="container"><h1>\uD83D\uDED2 Your Cart</h1><div class="cart-empty"><div class="empty-icon">\uD83D\uDED2</div><h3>Cart is empty</h3><p>Browse products and add items.</p><button class="btn btn-primary" onclick="PMS.go(\'store\')">Browse</button></div></div></section>'; return; }
         var total = PMS.cartTotal(), unp = PMS.hasUnpriced();
         var itemsH = cart.map(function (it) {
             return '<div class="cart-item" data-id="' + it.productId + '"><div class="cart-item-image">' + (it.image ? '<img src="' + PMS.esc(it.image) + '" alt="">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">\uD83D\uDCE6</div>') + '</div><div class="cart-item-info"><div class="cart-item-title">' + PMS.esc(it.name) + '</div><div class="cart-item-price">' + (it.price ? PMS.formatPrice(it.price) : '<span style="color:var(--accent)">Contact for Price</span>') + '</div><div class="cart-item-actions"><div class="qty-control"><button class="qm" data-id="' + it.productId + '">−</button><span>' + it.qty + '</span><button class="qp" data-id="' + it.productId + '">+</button></div><button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-left:auto" data-rm="' + it.productId + '">Remove</button></div></div></div>';
@@ -206,7 +244,6 @@
             '<button class="btn btn-whatsapp" id="wa-btn" style="margin-top:8px">\uD83D\uDCAC Order via WhatsApp</button>' +
             '<button class="btn btn-ghost" id="clr-btn" style="margin-top:8px;color:var(--danger);width:100%">Clear Cart</button>' +
             '</div></div></div></section>';
-        // Bindings
         el.querySelectorAll('.qm').forEach(function (b) { b.onclick = function () { var c = PMS.getCart(), it = c.find(function (i) { return i.productId === b.dataset.id; }); if (it) PMS.updateCartQty(b.dataset.id, it.qty - 1); PMS.renderCart(el); }; });
         el.querySelectorAll('.qp').forEach(function (b) { b.onclick = function () { var c = PMS.getCart(), it = c.find(function (i) { return i.productId === b.dataset.id; }); if (it) PMS.updateCartQty(b.dataset.id, it.qty + 1); PMS.renderCart(el); }; });
         el.querySelectorAll('[data-rm]').forEach(function (b) { b.onclick = function () { PMS.removeFromCart(b.dataset.rm); PMS.toast('Removed.', 'info'); PMS.renderCart(el); }; });
@@ -218,7 +255,7 @@
     function sendWA(ordId) {
         var u = PMS.currentUser, cart = PMS.getCart(), total = PMS.cartTotal();
         var msg = '\uD83D\uDED2 *New Order' + (ordId ? ' #' + ordId.substring(0, 8).toUpperCase() : '') + '*\n\n*Customer:* ' + (u ? (u.user_metadata.full_name || '') : '') + '\n*Email:* ' + (u ? u.email : '') + '\n\n*Items:*\n';
-        cart.forEach(function (i) { msg += '\u2022 ' + i.name + ' \u00D7 ' + i.qty + (i.price ? ' — ' + PMS.formatPrice(i.price * i.qty) : '') + '\n'; });
+        cart.forEach(function (i) { msg += '\u2022 ' + i.name + ' \u00D7 ' + i.qty + (i.price ? ' \u2014 ' + PMS.formatPrice(i.price * i.qty) : '') + '\n'; });
         if (total > 0) msg += '\n*Total:* ' + PMS.formatPrice(total);
         msg += '\n\nPlease confirm. Thank you! \uD83D\uDE4F';
         window.open(PMS.waUrl(msg), '_blank');
@@ -243,7 +280,7 @@
         if (!PMS.isOwner()) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDD12</div><h3>Access Denied</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back</button></div></div>'; return; }
         var tab = 'products';
         el.innerHTML = '<section class="admin-page"><div class="container"><div class="admin-header"><h1>\uD83D\uDCCB Admin Dashboard</h1><button class="btn btn-primary" id="add-btn">+ Add Product</button></div>' +
-            '<div class="admin-tabs"><button class="admin-tab active" data-t="products">Products</button><button class="admin-tab" data-t="orders">Orders</button></div>' +
+            '<div class="admin-tabs"><button class="admin-tab active" data-t="products">Products</button><button class="admin-tab" data-t="categories">Categories</button><button class="admin-tab" data-t="orders">Orders</button></div>' +
             '<div id="admin-c"></div></div></section>' +
             '<div class="modal-overlay" id="pf-modal"><div class="modal-box" style="max-width:700px"><div class="modal-box-header"><h3 id="pf-title">Add Product</h3><button class="modal-close" id="pf-close">\u2715</button></div><div class="modal-box-body"><form id="pf-form">' +
             '<div class="form-grid">' +
@@ -262,18 +299,24 @@
             '</div>' +
             '<div class="form-actions"><button type="button" class="btn btn-ghost" id="pf-cancel">Cancel</button><button type="submit" class="btn btn-primary" id="pf-save">Save</button></div>' +
             '</form></div></div></div>' +
-            '<div class="modal-overlay" id="del-modal"><div class="modal-box" style="max-width:400px"><div class="modal-box-header"><h3>Delete Product</h3><button class="modal-close" id="del-close">\u2715</button></div><div class="modal-box-body"><p>Delete <strong id="del-name"></strong>?</p></div><div class="modal-box-footer"><button class="btn btn-ghost" id="del-no">Cancel</button><button class="btn btn-danger" id="del-yes">Delete</button></div></div></div>';
+            '<div class="modal-overlay" id="del-modal"><div class="modal-box" style="max-width:400px"><div class="modal-box-header"><h3>Delete</h3><button class="modal-close" id="del-close">\u2715</button></div><div class="modal-box-body"><p>Delete <strong id="del-name"></strong>?</p></div><div class="modal-box-footer"><button class="btn btn-ghost" id="del-no">Cancel</button><button class="btn btn-danger" id="del-yes">Delete</button></div></div></div>';
 
         // Tab switching
         el.querySelectorAll('.admin-tab').forEach(function (t) {
-            t.onclick = function () { tab = t.dataset.t; el.querySelectorAll('.admin-tab').forEach(function (x) { x.classList.remove('active'); }); t.classList.add('active'); loadTab(); };
+            t.onclick = function () {
+                tab = t.dataset.t;
+                el.querySelectorAll('.admin-tab').forEach(function (x) { x.classList.remove('active'); });
+                t.classList.add('active');
+                document.getElementById('add-btn').style.display = tab === 'orders' ? 'none' : '';
+                document.getElementById('add-btn').textContent = tab === 'categories' ? '+ Add Category' : '+ Add Product';
+                loadTab();
+            };
         });
 
-        // Images: can be existing URLs or new files awaiting upload
-        var imgItems = []; // { type:'url', url:'...' } or { type:'file', file:File, preview:'data:...' }
+        var imgItems = [];
         var editProd = null;
 
-        document.getElementById('add-btn').onclick = function () { openForm(); };
+        document.getElementById('add-btn').onclick = function () { if (tab === 'categories') openCatForm(); else openForm(); };
         document.getElementById('pf-close').onclick = closeForm;
         document.getElementById('pf-cancel').onclick = closeForm;
         document.getElementById('pf-modal').onclick = function (e) { if (e.target === e.currentTarget) closeForm(); };
@@ -282,7 +325,6 @@
         document.getElementById('del-modal').onclick = function (e) { if (e.target === e.currentTarget) closeDel(); };
         document.getElementById('pf-form').onsubmit = submitForm;
 
-        // File upload area
         var uploadArea = document.getElementById('img-area');
         var fileInput = document.getElementById('pf-files');
         uploadArea.onclick = function () { fileInput.click(); };
@@ -312,10 +354,9 @@
 
         function openForm(product) {
             editProd = product; imgItems = [];
-            PMS.getCategories().catch(function () { return PMS.CATEGORIES; }).then(function (cats) {
+            PMS.getCategories().then(function (cats) {
                 var sel = document.getElementById('pf-cat');
-                sel.innerHTML = '<option value="">Select</option>' + cats.map(function (c) { return '<option value="' + PMS.esc(c) + '">' + PMS.esc(c) + '</option>'; }).join('') + '<option value="__new">+ New Category</option>';
-                sel.onchange = function () { if (sel.value === '__new') { var n = prompt('New category:'); if (n && n.trim()) { var o = document.createElement('option'); o.value = n.trim(); o.textContent = n.trim(); o.selected = true; sel.insertBefore(o, sel.lastElementChild); } else sel.value = ''; } };
+                sel.innerHTML = '<option value="">Select</option>' + cats.map(function (c) { return '<option value="' + PMS.esc(c.name) + '">' + PMS.esc(c.name) + '</option>'; }).join('');
                 if (product) {
                     document.getElementById('pf-title').textContent = 'Edit Product';
                     document.getElementById('pf-save').textContent = 'Update';
@@ -327,7 +368,6 @@
                     document.getElementById('pf-desc').value = product.description || '';
                     document.getElementById('pf-stock').checked = product.in_stock !== false;
                     document.getElementById('pf-specs').value = product.specifications ? Object.entries(product.specifications).map(function (kv) { return kv[0] + ': ' + kv[1]; }).join('\n') : '';
-                    // Load existing images
                     imgItems = (product.images || []).map(function (u) { return { type: 'url', url: u }; });
                     renderPrev();
                 } else {
@@ -358,19 +398,16 @@
                 specifications: specs
             };
 
-            // Collect existing URLs and new files to upload
             var existingUrls = imgItems.filter(function (i) { return i.type === 'url'; }).map(function (i) { return i.url; });
             var newFiles = imgItems.filter(function (i) { return i.type === 'file'; }).map(function (i) { return i.file; });
 
             var savePromise;
             if (editProd) {
-                // Upload new files, merge with existing URLs, then update
                 savePromise = (newFiles.length > 0 ? PMS.uploadImages(newFiles, editProd.id) : Promise.resolve([])).then(function (newUrls) {
                     data.images = existingUrls.concat(newUrls);
                     return PMS.updateProduct(editProd.id, data);
                 });
             } else {
-                // Create product first, then upload images and update
                 savePromise = PMS.addProduct(data).then(function (product) {
                     if (newFiles.length > 0) {
                         return PMS.uploadImages(newFiles, product.id).then(function (urls) {
@@ -387,16 +424,38 @@
                 .finally(function () { btn.disabled = false; btn.textContent = editProd ? 'Update' : 'Save'; });
         }
 
-        var delId;
-        function openDel(id, name) {
-            delId = id; document.getElementById('del-name').textContent = name; document.getElementById('del-modal').classList.add('open');
-            document.getElementById('del-yes').onclick = function () { PMS.deleteProduct(delId).then(function () { PMS.toast('Deleted.', 'success'); closeDel(); loadTab(); }).catch(function () { PMS.toast('Delete failed.', 'error'); }); };
+        // ---- Category form (uses prompt for simplicity) ----
+        function openCatForm(cat) {
+            var name = prompt(cat ? 'Edit category name:' : 'New category name:', cat ? cat.name : '');
+            if (!name || !name.trim()) return;
+            var order = cat ? cat.sort_order : 99;
+            var orderStr = prompt('Sort order (number):', String(order));
+            var sortOrder = parseInt(orderStr) || 0;
+
+            if (cat) {
+                PMS.updateCategory(cat.id, { name: name.trim(), sort_order: sortOrder }).then(function () { PMS.toast('Updated!', 'success'); loadTab(); }).catch(function () { PMS.toast('Failed.', 'error'); });
+            } else {
+                PMS.addCategory({ name: name.trim(), sort_order: sortOrder }).then(function () { PMS.toast('Added!', 'success'); loadTab(); }).catch(function () { PMS.toast('Failed.', 'error'); });
+            }
+        }
+
+        var delId, delType;
+        function openDel(id, name, type) {
+            delId = id; delType = type || 'product';
+            document.getElementById('del-name').textContent = name;
+            document.getElementById('del-modal').classList.add('open');
+            document.getElementById('del-yes').onclick = function () {
+                var p = delType === 'category' ? PMS.deleteCategory(delId) : PMS.deleteProduct(delId);
+                p.then(function () { PMS.toast('Deleted.', 'success'); closeDel(); loadTab(); }).catch(function () { PMS.toast('Delete failed.', 'error'); });
+            };
         }
         function closeDel() { document.getElementById('del-modal').classList.remove('open'); }
 
         function loadTab() {
             var c = document.getElementById('admin-c');
-            if (tab === 'products') loadProds(c); else loadOrds(c);
+            if (tab === 'products') loadProds(c);
+            else if (tab === 'categories') loadCats(c);
+            else loadOrds(c);
         }
 
         function loadProds(c) {
@@ -407,7 +466,19 @@
                     return '<div class="admin-product-item"><div class="admin-product-thumb">' + (p.images && p.images[0] ? '<img src="' + PMS.esc(p.images[0]) + '" alt="">' : '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">\uD83D\uDCE6</div>') + '</div><div class="admin-product-info"><h4>' + PMS.esc(p.name) + '</h4><div class="meta">' + PMS.esc(p.category || '') + ' \u00B7 ' + (p.price ? PMS.formatPrice(p.price) : 'No price') + ' \u00B7 <span class="stock-indicator ' + (p.in_stock ? 'stock-in' : 'stock-out') + '" style="display:inline-flex"><span class="stock-dot"></span>' + (p.in_stock ? 'In Stock' : 'Out') + '</span></div></div><div class="admin-product-actions"><button class="btn btn-outline btn-sm ed-btn" data-id="' + p.id + '">\u270F\uFE0F Edit</button><button class="btn btn-sm dl-btn" style="color:var(--danger)" data-id="' + p.id + '" data-nm="' + PMS.esc(p.name) + '">\uD83D\uDDD1\uFE0F</button></div></div>';
                 }).join('') + '</div>';
                 c.querySelectorAll('.ed-btn').forEach(function (b) { b.onclick = function () { var pr = prods.find(function (x) { return x.id === b.dataset.id; }); if (pr) openForm(pr); }; });
-                c.querySelectorAll('.dl-btn').forEach(function (b) { b.onclick = function () { openDel(b.dataset.id, b.dataset.nm); }; });
+                c.querySelectorAll('.dl-btn').forEach(function (b) { b.onclick = function () { openDel(b.dataset.id, b.dataset.nm, 'product'); }; });
+            });
+        }
+
+        function loadCats(c) {
+            c.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+            PMS.getCategories().then(function (cats) {
+                if (!cats.length) { c.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCC2</div><h3>No categories</h3></div>'; return; }
+                c.innerHTML = '<div class="admin-product-list">' + cats.map(function (cat) {
+                    return '<div class="admin-product-item"><div class="admin-product-thumb" style="background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:var(--primary)">' + (cat.sort_order || 0) + '</div><div class="admin-product-info"><h4>' + PMS.esc(cat.name) + '</h4><div class="meta">Order: ' + (cat.sort_order || 0) + '</div></div><div class="admin-product-actions"><button class="btn btn-outline btn-sm ec-btn" data-id="' + cat.id + '">\u270F\uFE0F Edit</button><button class="btn btn-sm dc-btn" style="color:var(--danger)" data-id="' + cat.id + '" data-nm="' + PMS.esc(cat.name) + '">\uD83D\uDDD1\uFE0F</button></div></div>';
+                }).join('') + '</div>';
+                c.querySelectorAll('.ec-btn').forEach(function (b) { b.onclick = function () { var ct = cats.find(function (x) { return x.id === b.dataset.id; }); if (ct) openCatForm(ct); }; });
+                c.querySelectorAll('.dc-btn').forEach(function (b) { b.onclick = function () { openDel(b.dataset.id, b.dataset.nm, 'category'); }; });
             });
         }
 

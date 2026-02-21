@@ -15,10 +15,11 @@
 
     function render(el, page, params) {
         switch (page) {
+            case 'store': PMS.renderStore(el); break;
             case 'product': PMS.renderProduct(el, params); break;
             case 'cart': PMS.renderCart(el); break;
             case 'admin': PMS.renderAdmin(el); break;
-            default: PMS.renderCatalog(el);
+            default: PMS.renderHome(el);
         }
     }
 
@@ -60,6 +61,9 @@
 
         var homeLink = document.getElementById('home-link');
         if (homeLink) homeLink.onclick = function (e) { e.preventDefault(); PMS.go('home'); };
+
+        var storeLink = document.getElementById('store-link');
+        if (storeLink) storeLink.onclick = function (e) { e.preventDefault(); PMS.go('store'); };
 
         var searchToggle = document.getElementById('mobile-search-toggle');
         var searchBar = document.querySelector('.navbar-search');

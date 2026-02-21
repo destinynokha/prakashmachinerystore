@@ -59,10 +59,35 @@
     };
 
     PMS.getCategories = function () {
-        return PMS.sb.from('products').select('category').then(function (res) {
-            var cats = new Set(PMS.CATEGORIES);
-            if (res.data) res.data.forEach(function (r) { if (r.category) cats.add(r.category); });
-            return Array.from(cats).sort();
+        return PMS.sb.from('categories').select('*').order('sort_order', { ascending: true }).then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || [];
+        });
+    };
+
+    PMS.addCategory = function (data) {
+        return PMS.sb.from('categories').insert(data).select().single().then(function (res) {
+            if (res.error) throw res.error;
+            return res.data;
+        });
+    };
+
+    PMS.updateCategory = function (id, data) {
+        return PMS.sb.from('categories').update(data).eq('id', id).then(function (res) {
+            if (res.error) throw res.error;
+        });
+    };
+
+    PMS.deleteCategory = function (id) {
+        return PMS.sb.from('categories').delete().eq('id', id).then(function (res) {
+            if (res.error) throw res.error;
+        });
+    };
+
+    PMS.getLatestProducts = function (limit) {
+        return PMS.sb.from('products').select('*').order('created_at', { ascending: false }).limit(limit || 6).then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || [];
         });
     };
 
