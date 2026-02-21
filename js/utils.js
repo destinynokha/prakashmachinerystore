@@ -84,6 +84,8 @@
     };
 
     // ==================== CUSTOMER PROFILE ====================
+    var COUNTRIES = ["Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahrain", "Bangladesh", "Belarus", "Belgium", "Bhutan", "Bolivia", "Bosnia", "Botswana", "Brazil", "Brunei", "Bulgaria", "Cambodia", "Cameroon", "Canada", "Chile", "China", "Colombia", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Estonia", "Ethiopia", "Fiji", "Finland", "France", "Georgia", "Germany", "Ghana", "Greece", "Guatemala", "Guinea", "Haiti", "Honduras", "Hong Kong", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Libya", "Lithuania", "Luxembourg", "Madagascar", "Malaysia", "Maldives", "Mali", "Malta", "Mauritius", "Mexico", "Moldova", "Mongolia", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saudi Arabia", "Senegal", "Serbia", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Somalia", "South Africa", "South Korea", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "UAE", "Uganda", "Ukraine", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"];
+
     PMS.getCustomerProfile = function () {
         try { return JSON.parse(localStorage.getItem('pms_profile') || 'null'); } catch (e) { return null; }
     };
@@ -94,14 +96,13 @@
 
     PMS.hasCustomerProfile = function () {
         var p = PMS.getCustomerProfile();
-        return p && p.firmName && p.phone;
+        return p && p.firmName && p.phone && p.country;
     };
 
     // Show profile modal and call back when done
     PMS.ensureProfile = function (callback) {
         if (PMS.hasCustomerProfile()) { callback(); return; }
 
-        // Build modal
         var existing = document.getElementById('profile-modal');
         if (existing) existing.remove();
 
@@ -114,6 +115,7 @@
             '<form id="prof-form">' +
             '<div class="form-group" style="margin-bottom:12px"><label class="form-label">Your Name</label><input class="form-input" id="prof-name" value="' + PMS.esc(PMS.currentUser ? (PMS.currentUser.user_metadata.full_name || '') : '') + '" required placeholder="Your name"></div>' +
             '<div class="form-group" style="margin-bottom:12px"><label class="form-label">Firm / Shop Name *</label><input class="form-input" id="prof-firm" required placeholder="e.g. ABC Hardware Store"></div>' +
+            '<div class="form-group" style="margin-bottom:12px"><label class="form-label">Country *</label><div class="country-search-wrap" style="position:relative"><input class="form-input" id="prof-country" required placeholder="Type to search..." autocomplete="off"><input type="hidden" id="prof-country-val"><div class="country-dropdown" id="country-dd" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);z-index:100"></div></div></div>' +
             '<div class="form-group" style="margin-bottom:12px"><label class="form-label">Contact Number *</label><input class="form-input" id="prof-phone" required placeholder="e.g. 9876543210" type="tel"></div>' +
             '<div class="form-group" style="margin-bottom:12px"><label class="form-label">Address <span class="optional">(opt)</span></label><textarea class="form-textarea" id="prof-addr" placeholder="City, State" style="min-height:50px"></textarea></div>' +
             '<div class="form-actions"><button type="submit" class="btn btn-primary" style="width:100%">Save & Continue</button></div>' +
@@ -121,14 +123,50 @@
 
         document.body.appendChild(div);
 
+        // Country searchable dropdown
+        var cInput = document.getElementById('prof-country');
+        var cVal = document.getElementById('prof-country-val');
+        var cDd = document.getElementById('country-dd');
+
+        function renderCountries(filter) {
+            var f = (filter || '').toLowerCase();
+            var matches = f ? COUNTRIES.filter(function (c) { return c.toLowerCase().indexOf(f) !== -1; }) : COUNTRIES;
+            if (!matches.length) { cDd.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:0.85rem">No match</div>'; cDd.style.display = 'block'; return; }
+            cDd.innerHTML = matches.map(function (c) {
+                return '<div class="country-opt" data-c="' + PMS.esc(c) + '" style="padding:8px 14px;cursor:pointer;font-size:0.9rem;transition:background 0.1s">' + PMS.esc(c) + '</div>';
+            }).join('');
+            cDd.style.display = 'block';
+            cDd.querySelectorAll('.country-opt').forEach(function (opt) {
+                opt.onmouseenter = function () { opt.style.background = 'var(--primary-50)'; };
+                opt.onmouseleave = function () { opt.style.background = ''; };
+                opt.onclick = function () {
+                    cInput.value = opt.dataset.c;
+                    cVal.value = opt.dataset.c;
+                    cDd.style.display = 'none';
+                };
+            });
+        }
+
+        cInput.onfocus = function () { renderCountries(cInput.value); };
+        cInput.oninput = function () { cVal.value = ''; renderCountries(cInput.value); };
+        document.addEventListener('click', function closeDD(e) {
+            if (!e.target.closest('.country-search-wrap')) { cDd.style.display = 'none'; }
+        });
+
         document.getElementById('prof-close').onclick = function () { div.remove(); };
         div.onclick = function (e) { if (e.target === div) div.remove(); };
 
         document.getElementById('prof-form').onsubmit = function (e) {
             e.preventDefault();
+            var country = cVal.value || cInput.value.trim();
+            // Validate country is in list
+            var matched = COUNTRIES.find(function (c) { return c.toLowerCase() === country.toLowerCase(); });
+            if (!matched) { PMS.toast('Please select a valid country.', 'warning'); cInput.focus(); return; }
+
             var profile = {
                 name: document.getElementById('prof-name').value.trim(),
                 firmName: document.getElementById('prof-firm').value.trim(),
+                country: matched,
                 phone: document.getElementById('prof-phone').value.trim(),
                 address: document.getElementById('prof-addr').value.trim()
             };
@@ -143,12 +181,16 @@
     PMS.buildWaMessage = function (title, items, total) {
         var p = PMS.getCustomerProfile() || {};
         var user = PMS.currentUser;
-        var msg = '*' + title + '*\n\n';
-        msg += '*Customer:* ' + (p.name || (user ? user.user_metadata.full_name : '') || 'N/A') + '\n';
+        var isInternational = p.country && p.country !== 'India';
+        var msg = '*' + title + '*\n';
+        if (isInternational) msg += '\n\uD83C\uDF0D *INTERNATIONAL — ' + p.country + '*\n';
+        msg += '\n*Customer:* ' + (p.name || (user ? user.user_metadata.full_name : '') || 'N/A') + '\n';
         if (p.firmName) msg += '*Firm:* ' + p.firmName + '\n';
         msg += '*Phone:* ' + (p.phone || 'N/A') + '\n';
         if (user) msg += '*Email:* ' + user.email + '\n';
-        if (p.address) msg += '*Address:* ' + p.address + '\n';
+        var addr = p.address || '';
+        if (!isInternational && p.country) addr = addr ? addr + ', ' + p.country : p.country;
+        if (addr) msg += '*Address:* ' + addr + '\n';
         msg += '\n*Items:*\n';
         items.forEach(function (i, idx) {
             msg += (idx + 1) + '. ' + i.name;
