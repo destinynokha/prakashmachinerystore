@@ -8,11 +8,11 @@
     PMS.renderHome = function (el) {
         el.innerHTML =
             '<section class="hero-banner"><div class="container">' +
-            '<h1>Prakash Machinery Store</h1>' +
+            '<h1>Prokash Machinery Store</h1>' +
             '<p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>' +
             '<div class="hero-actions">' +
             '<a href="#" onclick="event.preventDefault();PMS.go(\'store\')" class="btn btn-primary btn-lg">Browse Store</a>' +
-            '<a href="#" onclick="event.preventDefault();PMS.openWA(\'Hello Prakash Machinery Store, I\\\'m interested in your products\');" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
+            '<a href="#" onclick="event.preventDefault();PMS.openWA(\'Hello Prokash Machinery Store, I\\\'m interested in your products\');" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
             '</div>' +
             '</div></section>' +
             '<section class="latest-section"><div class="container">' +
@@ -26,7 +26,7 @@
             e.preventDefault();
             PMS.ensureProfile(function () {
                 PMS.openWA(PMS.buildWaMessage('\uD83D\uDCAC Contact Us Enquiry', []));
-            });
+            }, 'Contact Us (WhatsApp)');
         };
 
         // Load latest 6 products
@@ -165,7 +165,7 @@
                 } else {
                     PMS.ensureProfile(function () {
                         PMS.addToWishlist(uid, pid); wishlistIds.push(pid); btn.classList.add('wishlisted'); btn.innerHTML = '\u2764\uFE0F';
-                    });
+                    }, 'Wishlist Add');
                 }
             };
         });
@@ -173,8 +173,8 @@
             btn.onclick = function (e) {
                 e.stopPropagation(); var pid = btn.dataset.id;
                 if (btn.textContent.includes('Enquire')) {
+                    var n = btn.closest('.product-card').querySelector('.product-card-title').textContent;
                     PMS.ensureProfile(function () {
-                        var n = btn.closest('.product-card').querySelector('.product-card-title').textContent;
                         var title = '\uD83D\uDCE9 Product Enquiry';
                         var items = [{ name: n }];
                         PMS.chooseSendMethod(function (meth) {
@@ -184,19 +184,19 @@
                                 window.open(PMS.buildEmailMessage(title, items), '_blank');
                             }
                         });
-                    });
+                    }, n + ' (Product List Enquiry)');
                     return;
                 }
                 PMS.ensureProfile(function () {
                     PMS.getProduct(pid).then(function (p) { if (p) PMS.addToCartItem(p); });
-                });
+                }, 'Add to Cart');
             };
         });
     }
 
     function renderAbout() {
         return '<section class="about-section" id="about"><div class="container"><h2>About Us</h2><div class="section-divider"></div><div class="about-grid">' +
-            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prakash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p>' +
+            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prokash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p>' +
             '<div class="upi-card-mini" onclick="PMS.go(\'pay\')" style="margin-top:24px;width:100%;max-width:300px;display:inline-block">' +
             '<div class="upi-card-mini-header">\uD83D\uDCB3 Pay via UPI</div>' +
             '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="upi-qr-mini" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
@@ -219,7 +219,7 @@
         el.innerHTML =
             '<section class="pay-page"><div class="container">' +
             '<div class="pay-card">' +
-            '<div class="pay-header"><h1>\uD83D\uDCB3 Pay Prakash Machinery Store</h1><p style="color:var(--text-secondary)">Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, etc.)</p></div>' +
+            '<div class="pay-header"><h1>\uD83D\uDCB3 Pay Prokash Machinery Store</h1><p style="color:var(--text-secondary)">Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, etc.)</p></div>' +
             '<div class="pay-body">' +
             '<div class="pay-qr-box">' +
             '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="pay-qr-img" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
@@ -301,15 +301,15 @@
                             if (meth === 'wa') PMS.openWA(PMS.buildWaMessage(title, items));
                             else window.open(PMS.buildEmailMessage(title, items), '_blank');
                         });
-                    });
+                    }, p.name + ' (Product Detail Enquiry)');
                 };
                 var cb = document.getElementById('d-cart');
-                if (cb) cb.onclick = function () { PMS.ensureProfile(function () { PMS.addToCartItem(p); }); };
+                if (cb) cb.onclick = function () { PMS.ensureProfile(function () { PMS.addToCartItem(p); }, 'Add to Cart (' + p.name + ')'); };
                 var wb = document.getElementById('d-wl');
                 if (wb) wb.onclick = function () {
                     if (!PMS.isLoggedIn()) { PMS.toast('Sign in to save.', 'warning'); return; }
                     if (isWl) { PMS.removeFromWishlist(PMS.currentUser.id, pid); isWl = false; wb.innerHTML = '\uD83E\uDD0D Save'; PMS.toast('Removed.', 'info'); }
-                    else { PMS.ensureProfile(function () { PMS.addToWishlist(PMS.currentUser.id, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }); }
+                    else { PMS.ensureProfile(function () { PMS.addToWishlist(PMS.currentUser.id, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }, 'Wishlist Add (' + p.name + ')'); }
                 };
             });
         });
@@ -337,8 +337,8 @@
         el.querySelectorAll('.qp').forEach(function (b) { b.onclick = function () { var c = PMS.getCart(), it = c.find(function (i) { return i.productId === b.dataset.id; }); if (it) PMS.updateCartQty(b.dataset.id, it.qty + 1); PMS.renderCart(el); }; });
         el.querySelectorAll('[data-rm]').forEach(function (b) { b.onclick = function () { PMS.removeFromCart(b.dataset.rm); PMS.toast('Removed.', 'info'); PMS.renderCart(el); }; });
         document.getElementById('clr-btn').onclick = function () { if (confirm('Clear cart?')) { PMS.clearCart(); PMS.renderCart(el); } };
-        document.getElementById('wa-btn').onclick = function () { PMS.ensureProfile(function () { sendWA(); }); };
-        document.getElementById('place-btn').onclick = function () { PMS.ensureProfile(function () { placeOrder(el); }); };
+        document.getElementById('wa-btn').onclick = function () { PMS.ensureProfile(function () { sendWA(); }, 'Cart WhatsApp Order'); };
+        document.getElementById('place-btn').onclick = function () { PMS.ensureProfile(function () { placeOrder(el); }, 'Cart Place Order'); };
     };
 
     function placeOrder(el) {
@@ -412,7 +412,7 @@
             el.querySelectorAll('.wl-cart-btn').forEach(function (b) {
                 b.onclick = function () {
                     var prod = items.find(function (p) { return p.id === b.dataset.id; });
-                    if (prod) { PMS.ensureProfile(function () { PMS.addToCartItem(prod); }); }
+                    if (prod) { PMS.ensureProfile(function () { PMS.addToCartItem(prod); }, 'Wishlist Add to Cart (' + prod.name + ')'); }
                 };
             });
             document.getElementById('wl-wa-btn').onclick = function () {
@@ -423,13 +423,13 @@
                         if (meth === 'wa') PMS.openWA(PMS.buildWaMessage(title, itemsBody));
                         else window.open(PMS.buildEmailMessage(title, itemsBody), '_blank');
                     });
-                });
+                }, 'Wishlist WhatsApp Share');
             };
             document.getElementById('wl-all-cart').onclick = function () {
                 PMS.ensureProfile(function () {
                     items.forEach(function (p) { if (p.in_stock) PMS.addToCartItem(p); });
                     PMS.toast('Added all in-stock items to cart!', 'success');
-                });
+                }, 'Wishlist Add All to Cart');
             };
         }).catch(function (err) {
             console.error(err);
@@ -442,7 +442,7 @@
         if (!PMS.isOwner()) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDD12</div><h3>Access Denied</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back</button></div></div>'; return; }
         var tab = 'products';
         el.innerHTML = '<section class="admin-page"><div class="container"><div class="admin-header"><h1>\uD83D\uDCCB Admin Dashboard</h1><button class="btn btn-primary" id="add-btn">+ Add Product</button></div>' +
-            '<div class="admin-tabs"><button class="admin-tab active" data-t="products">Products</button><button class="admin-tab" data-t="categories">Categories</button><button class="admin-tab" data-t="orders">Orders</button></div>' +
+            '<div class="admin-tabs"><button class="admin-tab active" data-t="products">Products</button><button class="admin-tab" data-t="categories">Categories</button><button class="admin-tab" data-t="orders">Orders</button><button class="admin-tab" data-t="leads">Leads</button></div>' +
             '<div id="admin-c"></div></div></section>' +
             '<div class="modal-overlay" id="pf-modal"><div class="modal-box" style="max-width:700px"><div class="modal-box-header"><h3 id="pf-title">Add Product</h3><button class="modal-close" id="pf-close">\u2715</button></div><div class="modal-box-body"><form id="pf-form">' +
             '<div class="form-grid">' +
@@ -469,7 +469,7 @@
                 tab = t.dataset.t;
                 el.querySelectorAll('.admin-tab').forEach(function (x) { x.classList.remove('active'); });
                 t.classList.add('active');
-                document.getElementById('add-btn').style.display = tab === 'orders' ? 'none' : '';
+                document.getElementById('add-btn').style.display = (tab === 'orders' || tab === 'leads') ? 'none' : '';
                 document.getElementById('add-btn').textContent = tab === 'categories' ? '+ Add Category' : '+ Add Product';
                 loadTab();
             };
@@ -617,7 +617,8 @@
             var c = document.getElementById('admin-c');
             if (tab === 'products') loadProds(c);
             else if (tab === 'categories') loadCats(c);
-            else loadOrds(c);
+            else if (tab === 'orders') loadOrds(c);
+            else if (tab === 'leads') loadLeads(c);
         }
 
         function loadProds(c) {
@@ -653,6 +654,33 @@
                 }).join('') + '</div>';
                 c.querySelectorAll('[data-oid]').forEach(function (s) { s.onchange = function () { PMS.updateOrderStatus(s.dataset.oid, s.value).then(function () { PMS.toast('Status updated.', 'success'); loadOrds(c); }); }; });
             });
+        }
+        function loadLeads(c) {
+            c.innerHTML = '<div class="admin-header" style="justify-content:flex-start;margin-bottom:16px"><input type="text" class="form-input" id="lead-search" placeholder="\uD83D\uDD0D Search name, firm or item..." style="max-width:320px"></div><div id="leads-list"></div>';
+            var list = document.getElementById('leads-list');
+            var sInput = document.getElementById('lead-search');
+            list.innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
+            PMS.getLeads().then(function (leads) {
+                var allLeads = leads || [];
+                function renderL(filtered) {
+                    if (!filtered.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDC64</div><h3>No leads found</h3></div>'; return; }
+                    list.innerHTML = '<div class="order-list">' + filtered.map(function (l) {
+                        return '<div class="order-card"><div class="order-card-header"><div><strong style="font-size:1.1rem">' + PMS.esc(l.name || 'Unknown') + '</strong>' + (l.firm_name ? ' <span style="color:var(--text-secondary)">(' + PMS.esc(l.firm_name) + ')</span>' : '') + '</div><span class="order-date">' + PMS.formatDateTime(l.created_at) + '</span></div><div class="order-card-body">' +
+                            '<p style="margin:6px 0;color:var(--text-secondary);font-size:0.95rem">\uD83D\uDCCD ' + PMS.esc(l.country || '') + ' \u00B7 \uD83D\uDCDE ' + PMS.esc(l.phone || 'N/A') + '</p>' +
+                            '<p style="margin:8px 0 0 0;color:var(--primary);font-weight:600;font-size:0.95rem">\uD83D\uDCE9 Enquired: ' + PMS.esc(l.item_enquired || 'Account Setup') + '</p>' +
+                            '</div></div>';
+                    }).join('') + '</div>';
+                }
+                renderL(allLeads);
+                if (sInput) {
+                    sInput.oninput = function () {
+                        var t = sInput.value.toLowerCase();
+                        renderL(allLeads.filter(function (l) {
+                            return (l.name || '').toLowerCase().indexOf(t) > -1 || (l.item_enquired || '').toLowerCase().indexOf(t) > -1 || (l.firm_name || '').toLowerCase().indexOf(t) > -1 || (l.phone || '').toLowerCase().indexOf(t) > -1;
+                        }));
+                    };
+                }
+            }).catch(function (e) { console.error('Failed to load leads', e); list.innerHTML = '<div class="empty-state"><div class="empty-icon">\u26A0\uFE0F</div><h3>Failed to load leads</h3></div>'; });
         }
 
         loadTab();

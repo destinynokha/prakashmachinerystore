@@ -109,7 +109,7 @@
     };
 
     // Show profile modal and call back when done
-    PMS.ensureProfile = function (callback) {
+    PMS.ensureProfile = function (callback, itemContext) {
         if (PMS.hasCustomerProfile()) { callback(); return; }
 
         var existing = document.getElementById('profile-modal');
@@ -180,6 +180,19 @@
                 address: document.getElementById('prof-addr').value.trim()
             };
             PMS.saveCustomerProfile(profile);
+
+            if (PMS.createLead) {
+                PMS.createLead({
+                    user_id: PMS.currentUser.id,
+                    name: profile.name,
+                    firm_name: profile.firmName,
+                    phone: profile.phone,
+                    address: profile.address,
+                    country: profile.country,
+                    item_enquired: itemContext || 'Account Setup'
+                }).catch(function (err) { console.error('Lead capture failed', err); });
+            }
+
             div.remove();
             PMS.toast('Details saved!', 'success');
             callback();

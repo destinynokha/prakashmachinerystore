@@ -134,6 +134,22 @@
         });
     };
 
+    // ==================== LEADS ====================
+    PMS.createLead = function (data) {
+        data.created_at = new Date().toISOString();
+        return PMS.sb.from('leads').insert(data).select().single().then(function (res) {
+            if (res.error) throw res.error;
+            return res.data;
+        });
+    };
+
+    PMS.getLeads = function () {
+        return PMS.sb.from('leads').select('*').order('created_at', { ascending: false }).then(function (res) {
+            if (res.error) throw res.error;
+            return res.data || [];
+        });
+    };
+
     // ==================== SEED DATA ====================
     PMS.seedProducts = function () {
         var seeds = [

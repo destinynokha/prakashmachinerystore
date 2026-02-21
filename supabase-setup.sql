@@ -102,3 +102,26 @@ insert into categories (name, sort_order) values
 -- 3. Check "Public bucket" → Create
 -- 4. Click on the bucket → Policies → New Policy → Allow all for select (public read)
 -- 5. Add another policy → Allow authenticated users for insert
+
+-- ===== LEADS TABLE =====
+create table leads (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid,
+  name text,
+  firm_name text,
+  phone text,
+  address text,
+  country text,
+  item_enquired text,
+  created_at timestamptz default now()
+);
+
+alter table leads enable row level security;
+
+-- Authenticated users (admin) can view all leads
+create policy "Authenticated users can view leads"
+  on leads for select using (auth.role() = 'authenticated');
+
+-- Anyone can insert leads (public capture)
+create policy "Anyone can insert leads"
+  on leads for insert with check (true);
