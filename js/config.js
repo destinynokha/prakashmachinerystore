@@ -5,7 +5,7 @@ var PMS = window.PMS || {};
 PMS.supabaseUrl = "https://ginjegfhiiwmvvhdbsac.supabase.co";
 PMS.supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpbmplZ2ZoaWl3bXZ2aGRic2FjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NTkyNDgsImV4cCI6MjA4NzIzNTI0OH0.eU4r2LGa7gNT8K01VQ9TGdpyMEMyxkDJZD314jzU2Xk";
 
-PMS.OWNER_EMAIL = "navneetsharma94145@gmail.com";
+PMS.OWNER_EMAIL = "prakashmachinerystore03@gmail.com";
 
 PMS.STORE = {
     name: "Prakash Machinery Store",
