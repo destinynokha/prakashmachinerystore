@@ -52,6 +52,7 @@
         var adminLink = document.getElementById('admin-link');
         var cartLink = document.getElementById('cart-link');
         var homeLink = document.getElementById('home-link');
+        var wishLink = document.getElementById('wish-link');
 
         if (user) {
             if (loginBtn) loginBtn.classList.add('hidden');
@@ -67,11 +68,13 @@
             if (adminLink) adminLink.classList[PMS.isOwner() ? 'remove' : 'add']('hidden');
             if (cartLink) cartLink.classList.remove('hidden');
             if (homeLink) homeLink.classList.remove('hidden');
+            if (wishLink) wishLink.classList.remove('hidden');
         } else {
             if (loginBtn) loginBtn.classList.remove('hidden');
             if (userBox) userBox.classList.add('hidden');
             if (adminLink) adminLink.classList.add('hidden');
             if (cartLink) cartLink.classList.add('hidden');
+            if (wishLink) wishLink.classList.add('hidden');
         }
     }
 

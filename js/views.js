@@ -145,15 +145,26 @@
                 if (wishlistIds.includes(pid)) {
                     PMS.removeFromWishlist(uid, pid); wishlistIds = wishlistIds.filter(function (i) { return i !== pid; }); btn.classList.remove('wishlisted'); btn.innerHTML = '\uD83E\uDD0D';
                 } else {
-                    PMS.addToWishlist(uid, pid); wishlistIds.push(pid); btn.classList.add('wishlisted'); btn.innerHTML = '\u2764\uFE0F';
+                    PMS.ensureProfile(function () {
+                        PMS.addToWishlist(uid, pid); wishlistIds.push(pid); btn.classList.add('wishlisted'); btn.innerHTML = '\u2764\uFE0F';
+                    });
                 }
             };
         });
         grid.querySelectorAll('.cart-btn').forEach(function (btn) {
             btn.onclick = function (e) {
                 e.stopPropagation(); var pid = btn.dataset.id;
-                if (btn.textContent.includes('Enquire')) { var n = btn.closest('.product-card').querySelector('.product-card-title').textContent; window.open(PMS.waUrl("Hi, I'm interested in: " + n + ". Please share price."), '_blank'); return; }
-                PMS.getProduct(pid).then(function (p) { if (p) PMS.addToCartItem(p); });
+                if (btn.textContent.includes('Enquire')) {
+                    PMS.ensureProfile(function () {
+                        var n = btn.closest('.product-card').querySelector('.product-card-title').textContent;
+                        var msg = PMS.buildWaMessage('\uD83D\uDCE9 Product Enquiry', [{ name: n }]);
+                        window.open(PMS.waUrl(msg), '_blank');
+                    });
+                    return;
+                }
+                PMS.ensureProfile(function () {
+                    PMS.getProduct(pid).then(function (p) { if (p) PMS.addToCartItem(p); });
+                });
             };
         });
     }
@@ -215,12 +226,12 @@
                     th.onclick = function () { document.getElementById('gmain').innerHTML = '<img src="' + th.dataset.src + '" alt="">'; el.querySelectorAll('.gallery-thumb').forEach(function (t) { t.classList.remove('active'); }); th.classList.add('active'); };
                 });
                 var cb = document.getElementById('d-cart');
-                if (cb) cb.onclick = function () { PMS.addToCartItem(p); };
+                if (cb) cb.onclick = function () { PMS.ensureProfile(function () { PMS.addToCartItem(p); }); };
                 var wb = document.getElementById('d-wl');
                 if (wb) wb.onclick = function () {
                     if (!PMS.isLoggedIn()) { PMS.toast('Sign in to save.', 'warning'); return; }
                     if (isWl) { PMS.removeFromWishlist(PMS.currentUser.id, pid); isWl = false; wb.innerHTML = '\uD83E\uDD0D Save'; PMS.toast('Removed.', 'info'); }
-                    else { PMS.addToWishlist(PMS.currentUser.id, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }
+                    else { PMS.ensureProfile(function () { PMS.addToWishlist(PMS.currentUser.id, pid); isWl = true; wb.innerHTML = '\u2764\uFE0F Saved'; PMS.toast('Saved!', 'success'); }); }
                 };
             });
         });
@@ -248,25 +259,24 @@
         el.querySelectorAll('.qp').forEach(function (b) { b.onclick = function () { var c = PMS.getCart(), it = c.find(function (i) { return i.productId === b.dataset.id; }); if (it) PMS.updateCartQty(b.dataset.id, it.qty + 1); PMS.renderCart(el); }; });
         el.querySelectorAll('[data-rm]').forEach(function (b) { b.onclick = function () { PMS.removeFromCart(b.dataset.rm); PMS.toast('Removed.', 'info'); PMS.renderCart(el); }; });
         document.getElementById('clr-btn').onclick = function () { if (confirm('Clear cart?')) { PMS.clearCart(); PMS.renderCart(el); } };
-        document.getElementById('wa-btn').onclick = function () { sendWA(); };
-        document.getElementById('place-btn').onclick = function () { placeOrder(el); };
+        document.getElementById('wa-btn').onclick = function () { PMS.ensureProfile(function () { sendWA(); }); };
+        document.getElementById('place-btn').onclick = function () { PMS.ensureProfile(function () { placeOrder(el); }); };
     };
 
     function sendWA(ordId) {
-        var u = PMS.currentUser, cart = PMS.getCart(), total = PMS.cartTotal();
-        var msg = '\uD83D\uDED2 *New Order' + (ordId ? ' #' + ordId.substring(0, 8).toUpperCase() : '') + '*\n\n*Customer:* ' + (u ? (u.user_metadata.full_name || '') : '') + '\n*Email:* ' + (u ? u.email : '') + '\n\n*Items:*\n';
-        cart.forEach(function (i) { msg += '\u2022 ' + i.name + ' \u00D7 ' + i.qty + (i.price ? ' \u2014 ' + PMS.formatPrice(i.price * i.qty) : '') + '\n'; });
-        if (total > 0) msg += '\n*Total:* ' + PMS.formatPrice(total);
-        msg += '\n\nPlease confirm. Thank you! \uD83D\uDE4F';
+        var cart = PMS.getCart(), total = PMS.cartTotal();
+        var title = '\uD83D\uDED2 New Order' + (ordId ? ' #' + ordId.substring(0, 8).toUpperCase() : '');
+        var msg = PMS.buildWaMessage(title, cart, total);
         window.open(PMS.waUrl(msg), '_blank');
     }
 
     function placeOrder(el) {
         var user = PMS.currentUser, cart = PMS.getCart(), total = PMS.cartTotal();
+        var profile = PMS.getCustomerProfile() || {};
         var btn = document.getElementById('place-btn');
         if (btn) { btn.disabled = true; btn.textContent = 'Placing...'; }
         PMS.createOrder({
-            user_id: user.id, customer_name: user.user_metadata.full_name || '', customer_email: user.email, items: cart.map(function (i) { return { productId: i.productId, name: i.name, price: i.price, qty: i.qty }; }), total: total > 0 ? total : null
+            user_id: user.id, customer_name: profile.name || user.user_metadata.full_name || '', customer_email: user.email, items: cart.map(function (i) { return { productId: i.productId, name: i.name, price: i.price, qty: i.qty }; }), total: total > 0 ? total : null
         }).then(function (ref) {
             sendWA(ref.id);
             PMS.clearCart();
@@ -274,6 +284,78 @@
             el.querySelector('.cart-page .container').innerHTML = '<div class="empty-state" style="padding:40px 0"><div class="empty-icon" style="font-size:5rem;opacity:1">\uD83C\uDF89</div><h3 style="font-size:1.5rem">Order Placed!</h3><p>Your order has been sent to the store owner via WhatsApp.</p><button class="btn btn-primary" onclick="PMS.go(\'home\')">Continue Shopping</button></div>';
         }).catch(function (err) { console.error(err); PMS.toast('Order failed. Try WhatsApp.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '\uD83D\uDCE6 Place Order'; } });
     }
+
+    // ==================== WISHLIST PAGE ====================
+    PMS.renderWishlist = function (el) {
+        if (!PMS.isLoggedIn()) { el.innerHTML = '<div class="container" style="padding:60px 0"><div class="empty-state"><div class="empty-icon">\uD83D\uDD12</div><h3>Sign in to view wishlist</h3><button class="btn btn-primary" onclick="PMS.go(\'home\')">Back</button></div></div>'; return; }
+        el.innerHTML = '<section class="cart-page"><div class="container"><h1>\u2764\uFE0F My Wishlist</h1><div class="loading-screen"><div class="spinner"></div></div></div></section>';
+
+        Promise.all([
+            PMS.getWishlist(PMS.currentUser.id),
+            PMS.getProducts()
+        ]).then(function (results) {
+            var wlIds = results[0], allProducts = results[1];
+            var items = allProducts.filter(function (p) { return wlIds.includes(p.id); });
+
+            if (!items.length) {
+                el.querySelector('.cart-page .container').innerHTML = '<h1>\u2764\uFE0F My Wishlist</h1><div class="empty-state"><div class="empty-icon">\u2764\uFE0F</div><h3>Wishlist is empty</h3><p>Browse products and save items you like.</p><button class="btn btn-primary" onclick="PMS.go(\'store\')">Browse Store</button></div>';
+                return;
+            }
+
+            var itemsH = items.map(function (p) {
+                var price = PMS.formatPrice(p.price);
+                var img = (p.images && p.images[0]) || '';
+                return '<div class="cart-item" data-id="' + p.id + '">' +
+                    '<div class="cart-item-image">' + (img ? '<img src="' + PMS.esc(img) + '" alt="">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">\uD83D\uDCE6</div>') + '</div>' +
+                    '<div class="cart-item-info">' +
+                    '<div class="cart-item-title" style="cursor:pointer" onclick="PMS.go(\'product\',{id:\'' + p.id + '\'})">' + PMS.esc(p.name) + '</div>' +
+                    '<div class="cart-item-price">' + (price || '<span style="color:var(--accent)">Contact for Price</span>') + '</div>' +
+                    '<div class="cart-item-actions">' +
+                    (p.in_stock ? '<button class="btn btn-primary btn-sm wl-cart-btn" data-id="' + p.id + '">\uD83D\uDED2 Add to Cart</button>' : '<span class="btn btn-outline btn-sm" style="opacity:0.5">Out of Stock</span>') +
+                    '<button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-left:auto" data-rmwl="' + p.id + '">Remove</button>' +
+                    '</div></div></div>';
+            }).join('');
+
+            el.querySelector('.cart-page .container').innerHTML =
+                '<h1>\u2764\uFE0F My Wishlist (' + items.length + ' items)</h1>' +
+                '<div class="cart-grid"><div class="cart-items">' + itemsH + '</div>' +
+                '<div class="cart-summary"><h3>Wishlist Actions</h3>' +
+                '<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:16px">Send your entire wishlist to the store owner via WhatsApp for pricing and availability.</p>' +
+                '<button class="btn btn-whatsapp btn-lg" id="wl-wa-btn" style="width:100%">\uD83D\uDCAC Share via WhatsApp</button>' +
+                '<button class="btn btn-outline" id="wl-all-cart" style="margin-top:8px;width:100%">\uD83D\uDED2 Add All to Cart</button>' +
+                '</div></div>';
+
+            // Bind actions
+            el.querySelectorAll('[data-rmwl]').forEach(function (b) {
+                b.onclick = function () {
+                    PMS.removeFromWishlist(PMS.currentUser.id, b.dataset.rmwl).then(function () {
+                        PMS.toast('Removed.', 'info'); PMS.renderWishlist(el);
+                    });
+                };
+            });
+            el.querySelectorAll('.wl-cart-btn').forEach(function (b) {
+                b.onclick = function () {
+                    var prod = items.find(function (p) { return p.id === b.dataset.id; });
+                    if (prod) { PMS.ensureProfile(function () { PMS.addToCartItem(prod); }); }
+                };
+            });
+            document.getElementById('wl-wa-btn').onclick = function () {
+                PMS.ensureProfile(function () {
+                    var msg = PMS.buildWaMessage('\u2764\uFE0F Wishlist Enquiry', items.map(function (p) { return { name: p.name, price: p.price, qty: 1 }; }));
+                    window.open(PMS.waUrl(msg), '_blank');
+                });
+            };
+            document.getElementById('wl-all-cart').onclick = function () {
+                PMS.ensureProfile(function () {
+                    items.forEach(function (p) { if (p.in_stock) PMS.addToCartItem(p); });
+                    PMS.toast('Added all in-stock items to cart!', 'success');
+                });
+            };
+        }).catch(function (err) {
+            console.error(err);
+            el.querySelector('.cart-page .container').innerHTML = '<h1>\u2764\uFE0F My Wishlist</h1><div class="empty-state"><div class="empty-icon">\u26A0\uFE0F</div><h3>Failed to load</h3></div>';
+        });
+    };
 
     // ==================== ADMIN ====================
     PMS.renderAdmin = function (el) {

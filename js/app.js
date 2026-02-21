@@ -18,6 +18,7 @@
             case 'store': PMS.renderStore(el); break;
             case 'product': PMS.renderProduct(el, params); break;
             case 'cart': PMS.renderCart(el); break;
+            case 'wishlist': PMS.renderWishlist(el); break;
             case 'admin': PMS.renderAdmin(el); break;
             default: PMS.renderHome(el);
         }
@@ -64,6 +65,9 @@
 
         var storeLink = document.getElementById('store-link');
         if (storeLink) storeLink.onclick = function (e) { e.preventDefault(); PMS.go('store'); };
+
+        var wishLink = document.getElementById('wish-link');
+        if (wishLink) wishLink.onclick = function (e) { e.preventDefault(); PMS.go('wishlist'); };
 
         var searchToggle = document.getElementById('mobile-search-toggle');
         var searchBar = document.querySelector('.navbar-search');
