@@ -178,9 +178,51 @@
             '<div class="contact-detail"><span class="icon">\u2709\uFE0F</span><p><a href="mailto:' + PMS.STORE.ordersEmail + '">' + PMS.STORE.ordersEmail + '</a></p></div>' +
             '<div class="contact-detail"><span class="icon">\uD83D\uDCAC</span><p><a href="https://wa.me/' + PMS.STORE.whatsapp + '" target="_blank">WhatsApp: ' + PMS.STORE.phone + '</a></p></div>' +
             '<div class="contact-detail"><span class="icon">\uD83D\uDD52</span><p>' + PMS.STORE.hours + '</p></div>' +
+            '<div class="map-upi-row">' +
             '<iframe class="map-embed" src="' + PMS.STORE.mapUrl + '" allowfullscreen loading="lazy"></iframe>' +
+            '<div class="upi-card-mini" onclick="PMS.go(\'pay\')">' +
+            '<div class="upi-card-mini-header">\uD83D\uDCB3 Pay via UPI</div>' +
+            '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="upi-qr-mini" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
+            '<div class="upi-id-mini">' + PMS.STORE.upiId + '</div>' +
+            '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Tap to view full page</div>' +
+            '</div></div>' +
             '</div></div></div></section>';
     }
+
+    // ==================== PAY PAGE ====================
+    PMS.renderPay = function (el) {
+        el.innerHTML =
+            '<section class="pay-page"><div class="container">' +
+            '<div class="pay-card">' +
+            '<div class="pay-header"><h1>\uD83D\uDCB3 Pay Prakash Machinery Store</h1><p style="color:var(--text-secondary)">Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, etc.)</p></div>' +
+            '<div class="pay-body">' +
+            '<div class="pay-qr-box">' +
+            '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="pay-qr-img" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
+            '</div>' +
+            '<div class="pay-info">' +
+            '<div class="pay-detail"><span class="pay-label">Payee Name</span><span class="pay-value">' + PMS.esc(PMS.STORE.upiName) + '</span></div>' +
+            '<div class="pay-detail"><span class="pay-label">UPI ID</span><span class="pay-value" style="font-family:monospace;font-size:0.95rem">' + PMS.esc(PMS.STORE.upiId) + '</span></div>' +
+            '<button class="btn btn-primary btn-lg" id="copy-upi" style="width:100%;margin-top:16px">\uD83D\uDCCB Copy UPI ID</button>' +
+            '<a href="upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '&pn=' + encodeURIComponent(PMS.STORE.upiName) + '" class="btn btn-whatsapp btn-lg" style="width:100%;margin-top:8px">\uD83D\uDCF1 Open UPI App</a>' +
+            '</div></div>' +
+            '<div class="pay-footer"><p>\u26A0\uFE0F After payment, share the screenshot on <a href="https://wa.me/' + PMS.STORE.whatsapp + '" target="_blank" style="color:var(--whatsapp);font-weight:600">WhatsApp</a> for order confirmation.</p></div>' +
+            '</div></div></section>';
+
+        document.getElementById('copy-upi').onclick = function () {
+            navigator.clipboard.writeText(PMS.STORE.upiId).then(function () {
+                PMS.toast('UPI ID copied!', 'success');
+            }).catch(function () {
+                // Fallback
+                var t = document.createElement('textarea');
+                t.value = PMS.STORE.upiId;
+                document.body.appendChild(t);
+                t.select();
+                document.execCommand('copy');
+                document.body.removeChild(t);
+                PMS.toast('UPI ID copied!', 'success');
+            });
+        };
+    };
 
     // ==================== PRODUCT DETAIL ====================
     PMS.renderProduct = function (el, params) {

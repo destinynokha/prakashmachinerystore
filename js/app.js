@@ -19,6 +19,7 @@
             case 'product': PMS.renderProduct(el, params); break;
             case 'cart': PMS.renderCart(el); break;
             case 'wishlist': PMS.renderWishlist(el); break;
+            case 'pay': PMS.renderPay(el); break;
             case 'admin': PMS.renderAdmin(el); break;
             default: PMS.renderHome(el);
         }
@@ -68,6 +69,9 @@
 
         var wishLink = document.getElementById('wish-link');
         if (wishLink) wishLink.onclick = function (e) { e.preventDefault(); PMS.go('wishlist'); };
+
+        var payLink = document.getElementById('pay-link');
+        if (payLink) payLink.onclick = function (e) { e.preventDefault(); PMS.go('pay'); };
 
         var searchToggle = document.getElementById('mobile-search-toggle');
         var searchBar = document.querySelector('.navbar-search');
