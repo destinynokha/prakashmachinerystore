@@ -8,11 +8,11 @@
     PMS.renderHome = function (el) {
         el.innerHTML =
             '<section class="hero-banner"><div class="container">' +
-            '<h1>Prokash Machinery Store</h1>' +
+            '<h1>Prakash Machinery Store</h1>' +
             '<p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>' +
             '<div class="hero-actions">' +
             '<a href="#" onclick="event.preventDefault();PMS.go(\'store\')" class="btn btn-primary btn-lg">Browse Store</a>' +
-            '<a href="#" onclick="event.preventDefault();PMS.openWA(\'Hello Prokash Machinery Store, I\\\'m interested in your products\');" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
+            '<a href="#" onclick="event.preventDefault(); var waBtn = document.getElementById(\'contact-wa\'); if(waBtn) waBtn.click();" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
             '</div>' +
             '</div></section>' +
             '<section class="latest-section"><div class="container">' +
@@ -196,7 +196,7 @@
 
     function renderAbout() {
         return '<section class="about-section" id="about"><div class="container"><h2>About Us</h2><div class="section-divider"></div><div class="about-grid">' +
-            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prokash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p>' +
+            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prakash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p>' +
             '<div class="upi-card-mini" onclick="PMS.go(\'pay\')" style="margin-top:24px;width:100%;max-width:300px;display:inline-block">' +
             '<div class="upi-card-mini-header">\uD83D\uDCB3 Pay via UPI</div>' +
             '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="upi-qr-mini" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
@@ -219,7 +219,7 @@
         el.innerHTML =
             '<section class="pay-page"><div class="container">' +
             '<div class="pay-card">' +
-            '<div class="pay-header"><h1>\uD83D\uDCB3 Pay Prokash Machinery Store</h1><p style="color:var(--text-secondary)">Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, etc.)</p></div>' +
+            '<div class="pay-header"><h1>\uD83D\uDCB3 Pay Prakash Machinery Store</h1><p style="color:var(--text-secondary)">Scan the QR code with any UPI app (Google Pay, PhonePe, Paytm, etc.)</p></div>' +
             '<div class="pay-body">' +
             '<div class="pay-qr-box">' +
             '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="pay-qr-img" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
