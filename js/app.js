@@ -79,8 +79,59 @@
             searchToggle.onclick = function () { searchBar.classList.toggle('open'); if (searchBar.classList.contains('open')) searchBar.querySelector('input').focus(); };
         }
 
+        // --- Mobile Drawer Logic ---
+        var mToggle = document.getElementById('mobile-menu-toggle');
+        var mDrawer = document.getElementById('mobile-drawer');
+        var mClose = document.getElementById('mobile-drawer-close');
+
+        function closeDrawer() { if (mDrawer) mDrawer.classList.remove('open'); }
+        if (mToggle && mDrawer) mToggle.onclick = function () { mDrawer.classList.add('open'); };
+        if (mClose) mClose.onclick = closeDrawer;
+        if (mDrawer) mDrawer.onclick = function (e) { if (e.target === mDrawer) closeDrawer(); };
+
+        ['home', 'store', 'pay', 'wish', 'cart', 'admin'].forEach(function (k) {
+            var el = document.getElementById('m-' + k + '-link');
+            if (el) el.onclick = function (e) { e.preventDefault(); closeDrawer(); PMS.go(k === 'wish' ? 'wishlist' : k); };
+        });
+
+        var mLoginBtn = document.getElementById('m-login-btn');
+        if (mLoginBtn) mLoginBtn.onclick = function () { closeDrawer(); PMS.signIn(); };
+
+        var mSignOutBtn = document.getElementById('m-signout-btn');
+        if (mSignOutBtn) mSignOutBtn.onclick = function () { closeDrawer(); PMS.signOut(); PMS.go('home'); };
+
+        var mOrdersBtn = document.getElementById('m-orders-btn');
+        if (mOrdersBtn) mOrdersBtn.onclick = function () { closeDrawer(); PMS.toast('Orders page coming soon!', 'info'); };
+        // ---------------------------
+
         PMS.updateCartBadge();
-        PMS.onAuth(function () { PMS.updateCartBadge(); });
+        PMS.onAuth(function (user) {
+            PMS.updateCartBadge();
+
+            // Update Mobile Drawer Auth UI
+            var mLogin = document.getElementById('m-login-btn');
+            var mUserSec = document.getElementById('m-user-section');
+            var mWish = document.getElementById('m-wish-link');
+            var mCart = document.getElementById('m-cart-link');
+            var mAdmin = document.getElementById('m-admin-link');
+
+            if (user) {
+                if (mLogin) mLogin.classList.add('hidden');
+                if (mUserSec) mUserSec.classList.remove('hidden');
+                if (mWish) mWish.classList.remove('hidden');
+                if (mCart) mCart.classList.remove('hidden');
+                document.getElementById('m-user-name').textContent = user.user_metadata.full_name || 'User';
+                document.getElementById('m-user-email').textContent = user.email;
+                document.getElementById('m-user-avatar').src = user.user_metadata.avatar_url || 'https://ui-avatars.com/api/?name=' + user.email;
+                if (mAdmin && PMS.isOwner()) mAdmin.classList.remove('hidden');
+            } else {
+                if (mLogin) mLogin.classList.remove('hidden');
+                if (mUserSec) mUserSec.classList.add('hidden');
+                if (mWish) mWish.classList.add('hidden');
+                if (mCart) mCart.classList.add('hidden');
+                if (mAdmin) mAdmin.classList.add('hidden');
+            }
+        });
 
         // Parse initial hash
         var hash = location.hash.replace('#', '');
