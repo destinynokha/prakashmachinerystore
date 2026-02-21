@@ -115,11 +115,19 @@
         var badges = '';
         if (!p.in_stock) badges = '<span class="card-badge card-badge-outofstock">Out of Stock</span>';
         else if (disc > 0) badges = '<span class="card-badge card-badge-discount">' + disc + '% OFF</span>';
+
+        var specsH = '';
+        if (p.specifications && Object.keys(p.specifications).length) {
+            specsH = '<div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)"><table style="width:100%">';
+            Object.entries(p.specifications).forEach(function (kv) { specsH += '<tr><td style="font-weight:600;padding-right:8px;vertical-align:top;width:40%">' + PMS.esc(kv[0]) + '</td><td>' + PMS.esc(kv[1]) + '</td></tr>'; });
+            specsH += '</table></div>';
+        }
+        var descH = p.description ? '<div style="margin-top:8px;font-size:0.85rem;color:var(--text-secondary);line-height:1.4">' + PMS.esc(p.description) + '</div>' : '';
+
         return '<div class="product-card" data-id="' + p.id + '">' +
             '<div class="product-card-image">' +
             (img ? '<img src="' + PMS.esc(img) + '" alt="' + PMS.esc(p.name) + '" loading="lazy">' : '<div class="no-image">\uD83D\uDCE6</div>') +
             (badges ? '<div class="card-badges">' + badges + '</div>' : '') +
-            '<div class="card-quick-actions"><button class="quick-action-btn wl-btn ' + (wl ? 'wishlisted' : '') + '" data-id="' + p.id + '">' + (wl ? '\u2764\uFE0F' : '\uD83E\uDD0D') + '</button></div>' +
             '</div>' +
             '<div class="product-card-body">' +
             '<div class="product-card-category">' + PMS.esc(p.category || '') + '</div>' +
@@ -127,8 +135,10 @@
             (p.brand ? '<div class="product-card-brand">' + PMS.esc(p.brand) + '</div>' : '') +
             priceH +
             '<div class="stock-indicator ' + (p.in_stock ? 'stock-in' : 'stock-out') + '"><span class="stock-dot"></span>' + (p.in_stock ? 'In Stock' : 'Out of Stock') + '</div>' +
-            '<div class="product-card-footer">' +
-            (p.in_stock ? '<button class="btn btn-primary btn-sm cart-btn" data-id="' + p.id + '">' + (price ? '\uD83D\uDED2 Add to Cart' : '\uD83D\uDCAC Enquire') + '</button>' : '<button class="btn btn-outline btn-sm" disabled>Out of Stock</button>') +
+            descH + specsH +
+            '<div class="product-card-footer" style="display:flex;gap:8px;margin-top:16px;">' +
+            (p.in_stock ? '<button class="btn btn-primary btn-sm cart-btn" style="flex:1" data-id="' + p.id + '">' + (price ? '\uD83D\uDED2 Add to Cart' : '\uD83D\uDCAC Enquire') + '</button>' : '<button class="btn btn-outline btn-sm" style="flex:1" disabled>Out of Stock</button>') +
+            '<button class="btn btn-outline btn-sm wl-btn ' + (wl ? 'wishlisted' : '') + '" style="padding:0 12px" data-id="' + p.id + '">' + (wl ? '\u2764\uFE0F' : '\uD83E\uDD0D') + '</button>' +
             '</div>' +
             '</div></div>';
     }
@@ -157,8 +167,15 @@
                 if (btn.textContent.includes('Enquire')) {
                     PMS.ensureProfile(function () {
                         var n = btn.closest('.product-card').querySelector('.product-card-title').textContent;
-                        var msg = PMS.buildWaMessage('\uD83D\uDCE9 Product Enquiry', [{ name: n }]);
-                        window.open(PMS.waUrl(msg), '_blank');
+                        var title = '\uD83D\uDCE9 Product Enquiry';
+                        var items = [{ name: n }];
+                        PMS.chooseSendMethod(function (meth) {
+                            if (meth === 'wa') {
+                                window.open(PMS.waUrl(PMS.buildWaMessage(title, items)), '_blank');
+                            } else {
+                                window.open(PMS.buildEmailMessage(title, items), '_blank');
+                            }
+                        });
                     });
                     return;
                 }
@@ -260,13 +277,24 @@
                     specsH +
                     '<div class="product-detail-actions">' +
                     (p.in_stock && price ? '<button class="btn btn-primary btn-lg" id="d-cart">\uD83D\uDED2 Add to Cart</button>' : '') +
-                    '<a href="' + PMS.waUrl(waMsg) + '" target="_blank" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC ' + (price ? 'Ask on WhatsApp' : 'Enquire') + '</a>' +
+                    '<button class="btn btn-whatsapp btn-lg" id="d-wa">\uD83D\uDCAC ' + (price ? 'Enquire' : 'Enquire') + ' / Order</button>' +
                     '<button class="btn btn-outline" id="d-wl">' + (isWl ? '\u2764\uFE0F Saved' : '\uD83E\uDD0D Save') + '</button>' +
                     '</div></div></div></div></section>';
 
                 el.querySelectorAll('.gallery-thumb').forEach(function (th) {
                     th.onclick = function () { document.getElementById('gmain').innerHTML = '<img src="' + th.dataset.src + '" alt="">'; el.querySelectorAll('.gallery-thumb').forEach(function (t) { t.classList.remove('active'); }); th.classList.add('active'); };
                 });
+                var dWa = document.getElementById('d-wa');
+                if (dWa) dWa.onclick = function () {
+                    PMS.ensureProfile(function () {
+                        var title = '\uD83D\uDCE9 Product Enquiry';
+                        var items = [{ name: p.name, price: price ? p.price : null, qty: 1 }];
+                        PMS.chooseSendMethod(function (meth) {
+                            if (meth === 'wa') window.open(PMS.waUrl(PMS.buildWaMessage(title, items)), '_blank');
+                            else window.open(PMS.buildEmailMessage(title, items), '_blank');
+                        });
+                    });
+                };
                 var cb = document.getElementById('d-cart');
                 if (cb) cb.onclick = function () { PMS.ensureProfile(function () { PMS.addToCartItem(p); }); };
                 var wb = document.getElementById('d-wl');
@@ -305,26 +333,24 @@
         document.getElementById('place-btn').onclick = function () { PMS.ensureProfile(function () { placeOrder(el); }); };
     };
 
-    function sendWA(ordId) {
-        var cart = PMS.getCart(), total = PMS.cartTotal();
-        var title = '\uD83D\uDED2 New Order' + (ordId ? ' #' + ordId.substring(0, 8).toUpperCase() : '');
-        var msg = PMS.buildWaMessage(title, cart, total);
-        window.open(PMS.waUrl(msg), '_blank');
-    }
-
     function placeOrder(el) {
         var user = PMS.currentUser, cart = PMS.getCart(), total = PMS.cartTotal();
-        var profile = PMS.getCustomerProfile() || {};
-        var btn = document.getElementById('place-btn');
-        if (btn) { btn.disabled = true; btn.textContent = 'Placing...'; }
-        PMS.createOrder({
-            user_id: user.id, customer_name: profile.name || user.user_metadata.full_name || '', customer_email: user.email, items: cart.map(function (i) { return { productId: i.productId, name: i.name, price: i.price, qty: i.qty }; }), total: total > 0 ? total : null
-        }).then(function (ref) {
-            sendWA(ref.id);
-            PMS.clearCart();
-            PMS.toast('Order placed! \uD83C\uDF89', 'success');
-            el.querySelector('.cart-page .container').innerHTML = '<div class="empty-state" style="padding:40px 0"><div class="empty-icon" style="font-size:5rem;opacity:1">\uD83C\uDF89</div><h3 style="font-size:1.5rem">Order Placed!</h3><p>Your order has been sent to the store owner via WhatsApp.</p><button class="btn btn-primary" onclick="PMS.go(\'home\')">Continue Shopping</button></div>';
-        }).catch(function (err) { console.error(err); PMS.toast('Order failed. Try WhatsApp.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '\uD83D\uDCE6 Place Order'; } });
+        if (!cart.length) return;
+        PMS.chooseSendMethod(function (meth) {
+            var profile = PMS.getCustomerProfile() || {};
+            var btn = document.getElementById('place-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Placing...'; }
+            PMS.createOrder({
+                user_id: user.id, customer_name: profile.name || user.user_metadata.full_name || '', customer_email: user.email, items: cart.map(function (i) { return { productId: i.productId, name: i.name, price: i.price, qty: i.qty }; }), total: total > 0 ? total : null
+            }).then(function (ref) {
+                var title = '\uD83D\uDED2 New Order' + (ref.id ? ' #' + ref.id.substring(0, 8).toUpperCase() : '');
+                if (meth === 'wa') window.open(PMS.waUrl(PMS.buildWaMessage(title, cart, total)), '_blank');
+                else window.open(PMS.buildEmailMessage(title, cart, total), '_blank');
+                PMS.clearCart();
+                PMS.toast('Order placed! \uD83C\uDF89', 'success');
+                el.querySelector('.cart-page .container').innerHTML = '<div class="empty-state" style="padding:40px 0"><div class="empty-icon" style="font-size:5rem;opacity:1">\uD83C\uDF89</div><h3 style="font-size:1.5rem">Order Placed!</h3><p>Your order has been sent to the store.</p><button class="btn btn-primary" onclick="PMS.go(\'home\')">Continue Shopping</button></div>';
+            }).catch(function (err) { console.error(err); PMS.toast('Order failed.', 'error'); if (btn) { btn.disabled = false; btn.textContent = '\uD83D\uDCE6 Place Order'; } });
+        });
     }
 
     // ==================== WISHLIST PAGE ====================
@@ -383,8 +409,12 @@
             });
             document.getElementById('wl-wa-btn').onclick = function () {
                 PMS.ensureProfile(function () {
-                    var msg = PMS.buildWaMessage('\u2764\uFE0F Wishlist Enquiry', items.map(function (p) { return { name: p.name, price: p.price, qty: 1 }; }));
-                    window.open(PMS.waUrl(msg), '_blank');
+                    var title = '\u2764\uFE0F Wishlist Enquiry';
+                    var itemsBody = items.map(function (p) { return { name: p.name, price: p.price, qty: 1 }; });
+                    PMS.chooseSendMethod(function (meth) {
+                        if (meth === 'wa') window.open(PMS.waUrl(PMS.buildWaMessage(title, itemsBody)), '_blank');
+                        else window.open(PMS.buildEmailMessage(title, itemsBody), '_blank');
+                    });
                 });
             };
             document.getElementById('wl-all-cart').onclick = function () {

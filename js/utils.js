@@ -202,5 +202,51 @@
         msg += '\n\nPlease confirm. Thank you! \uD83D\uDE4F';
         return msg;
     };
+    PMS.buildEmailMessage = function (title, items, total) {
+        var p = PMS.getCustomerProfile() || {};
+        var user = PMS.currentUser;
+        var msg = title + '\n\n';
+        msg += 'Customer: ' + (p.name || (user ? user.user_metadata.full_name : '') || 'N/A') + '\n';
+        if (p.firmName) msg += 'Firm: ' + p.firmName + '\n';
+        if (p.country) msg += 'Country: ' + p.country + '\n';
+        msg += 'Phone: ' + (p.phone || 'N/A') + '\n';
+        if (user) msg += 'Email: ' + user.email + '\n';
+        var addr = p.address || '';
+        if (addr) msg += 'Address: ' + addr + '\n';
+        msg += '\nItems:\n';
+        items.forEach(function (i, idx) {
+            msg += (idx + 1) + '. ' + i.name;
+            if (i.qty && i.qty > 1) msg += ' \u00D7 ' + i.qty;
+            if (i.price) msg += ' \u2014 ' + PMS.formatPrice(i.price * (i.qty || 1));
+            msg += '\n';
+        });
+        if (total && total > 0) msg += '\nTotal: ' + PMS.formatPrice(total);
+        msg += '\n\nPlease confirm. Thank you!';
+        return 'mailto:' + PMS.STORE.ordersEmail + '?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(msg);
+    };
+
+    PMS.chooseSendMethod = function (callback) {
+        var existing = document.getElementById('method-modal');
+        if (existing) existing.remove();
+
+        var div = document.createElement('div');
+        div.id = 'method-modal';
+        div.className = 'modal-overlay open';
+        div.innerHTML =
+            '<div class="modal-box" style="max-width:400px;text-align:center"><div class="modal-box-header"><h3>\uD83D\uDCE4 Send Via</h3><button class="modal-close" id="meth-close">\u2715</button></div>' +
+            '<div class="modal-box-body"><p style="color:var(--text-secondary);margin-bottom:24px">How would you like to send this to the store?</p>' +
+            '<div style="display:flex;gap:16px;flex-direction:column">' +
+            '<button class="btn btn-whatsapp btn-lg" id="btn-wa">\uD83D\uDCAC WhatsApp</button>' +
+            '<button class="btn btn-outline btn-lg" id="btn-email">\u2709\uFE0F Email</button>' +
+            '</div></div></div>';
+
+        document.body.appendChild(div);
+
+        document.getElementById('meth-close').onclick = function () { div.remove(); };
+        div.onclick = function (e) { if (e.target === div) div.remove(); };
+
+        document.getElementById('btn-wa').onclick = function () { div.remove(); callback('wa'); };
+        document.getElementById('btn-email').onclick = function () { div.remove(); callback('email'); };
+    };
 
 })(PMS);
