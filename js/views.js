@@ -12,7 +12,7 @@
             '<p>Your Trusted Partner for Quality Machinery Tools & Equipment</p>' +
             '<div class="hero-actions">' +
             '<a href="#" onclick="event.preventDefault();PMS.go(\'store\')" class="btn btn-primary btn-lg">Browse Store</a>' +
-            '<a href="' + PMS.waUrl("Hello Prakash Machinery Store, I'm interested in your products") + '" target="_blank" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
+            '<a href="#" onclick="event.preventDefault();PMS.openWA(\'Hello Prakash Machinery Store, I\\\'m interested in your products\');" class="btn btn-whatsapp btn-lg">\uD83D\uDCAC WhatsApp Us</a>' +
             '</div>' +
             '</div></section>' +
             '<section class="latest-section"><div class="container">' +
@@ -20,6 +20,14 @@
             '<div class="product-grid" id="latest-grid"></div>' +
             '</div></section>' +
             renderAbout();
+
+        var waBtn = document.getElementById('contact-wa');
+        if (waBtn) waBtn.onclick = function (e) {
+            e.preventDefault();
+            PMS.ensureProfile(function () {
+                PMS.openWA(PMS.buildWaMessage('\uD83D\uDCAC Contact Us Enquiry', []));
+            });
+        };
 
         // Load latest 6 products
         var grid = document.getElementById('latest-grid');
@@ -171,7 +179,7 @@
                         var items = [{ name: n }];
                         PMS.chooseSendMethod(function (meth) {
                             if (meth === 'wa') {
-                                window.open(PMS.waUrl(PMS.buildWaMessage(title, items)), '_blank');
+                                PMS.openWA(PMS.buildWaMessage(title, items));
                             } else {
                                 window.open(PMS.buildEmailMessage(title, items), '_blank');
                             }
@@ -188,21 +196,21 @@
 
     function renderAbout() {
         return '<section class="about-section" id="about"><div class="container"><h2>About Us</h2><div class="section-divider"></div><div class="about-grid">' +
-            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prakash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p></div>' +
-            '<div class="about-card" id="contact"><h3>Contact Us</h3>' +
-            '<div class="contact-detail"><span class="icon">\uD83D\uDCCD</span><p>' + PMS.STORE.address + '</p></div>' +
-            '<div class="contact-detail"><span class="icon">\uD83D\uDCDE</span><p><a href="tel:' + PMS.STORE.phone + '">' + PMS.STORE.phone + '</a></p></div>' +
-            '<div class="contact-detail"><span class="icon">\u2709\uFE0F</span><p><a href="mailto:' + PMS.STORE.ordersEmail + '">' + PMS.STORE.ordersEmail + '</a></p></div>' +
-            '<div class="contact-detail"><span class="icon">\uD83D\uDCAC</span><p><a href="https://wa.me/' + PMS.STORE.whatsapp + '" target="_blank">WhatsApp: ' + PMS.STORE.phone + '</a></p></div>' +
-            '<div class="contact-detail"><span class="icon">\uD83D\uDD52</span><p>' + PMS.STORE.hours + '</p></div>' +
-            '<div class="map-upi-row">' +
-            '<iframe class="map-embed" src="' + PMS.STORE.mapUrl + '" allowfullscreen loading="lazy"></iframe>' +
-            '<div class="upi-card-mini" onclick="PMS.go(\'pay\')">' +
+            '<div class="about-card"><h3>Who We Are</h3><p style="color:var(--text-secondary);line-height:1.8;font-size:.92rem">Prakash Machinery Store is your trusted partner for quality tools and machinery. We specialize in INGCO tools, welding machines, angle grinders, cutting wheels, and power tools.</p>' +
+            '<div class="upi-card-mini" onclick="PMS.go(\'pay\')" style="margin-top:24px;width:100%;max-width:300px;display:inline-block">' +
             '<div class="upi-card-mini-header">\uD83D\uDCB3 Pay via UPI</div>' +
             '<img src="' + PMS.STORE.upiQr + '" alt="UPI QR Code" class="upi-qr-mini" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=' + encodeURIComponent(PMS.STORE.upiId) + '%26pn=' + encodeURIComponent(PMS.STORE.upiName) + '\'">' +
             '<div class="upi-id-mini">' + PMS.STORE.upiId + '</div>' +
             '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Tap to view full page</div>' +
             '</div></div>' +
+            '<div class="about-card" id="contact"><h3>Contact Us</h3>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDCCD</span><p>' + PMS.STORE.address + '</p></div>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDCDE</span><p><a href="tel:' + PMS.STORE.phone + '">' + PMS.STORE.phone + '</a></p></div>' +
+            '<div class="contact-detail"><span class="icon">\u2709\uFE0F</span><p><a href="mailto:' + PMS.STORE.ordersEmail + '">' + PMS.STORE.ordersEmail + '</a></p></div>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDCAC</span><p><a href="#" id="contact-wa">WhatsApp: ' + PMS.STORE.phone + '</a></p></div>' +
+            '<div class="contact-detail"><span class="icon">\uD83D\uDD52</span><p>' + PMS.STORE.hours + '</p></div>' +
+            '<div class="map-upi-row">' +
+            '<iframe class="map-embed" src="' + PMS.STORE.mapUrl + '" allowfullscreen loading="lazy"></iframe>' +
             '</div></div></div></section>';
     }
 
@@ -290,7 +298,7 @@
                         var title = '\uD83D\uDCE9 Product Enquiry';
                         var items = [{ name: p.name, price: price ? p.price : null, qty: 1 }];
                         PMS.chooseSendMethod(function (meth) {
-                            if (meth === 'wa') window.open(PMS.waUrl(PMS.buildWaMessage(title, items)), '_blank');
+                            if (meth === 'wa') PMS.openWA(PMS.buildWaMessage(title, items));
                             else window.open(PMS.buildEmailMessage(title, items), '_blank');
                         });
                     });
@@ -344,7 +352,7 @@
                 user_id: user.id, customer_name: profile.name || user.user_metadata.full_name || '', customer_email: user.email, items: cart.map(function (i) { return { productId: i.productId, name: i.name, price: i.price, qty: i.qty }; }), total: total > 0 ? total : null
             }).then(function (ref) {
                 var title = '\uD83D\uDED2 New Order' + (ref.id ? ' #' + ref.id.substring(0, 8).toUpperCase() : '');
-                if (meth === 'wa') window.open(PMS.waUrl(PMS.buildWaMessage(title, cart, total)), '_blank');
+                if (meth === 'wa') PMS.openWA(PMS.buildWaMessage(title, cart, total));
                 else window.open(PMS.buildEmailMessage(title, cart, total), '_blank');
                 PMS.clearCart();
                 PMS.toast('Order placed! \uD83C\uDF89', 'success');
@@ -412,7 +420,7 @@
                     var title = '\u2764\uFE0F Wishlist Enquiry';
                     var itemsBody = items.map(function (p) { return { name: p.name, price: p.price, qty: 1 }; });
                     PMS.chooseSendMethod(function (meth) {
-                        if (meth === 'wa') window.open(PMS.waUrl(PMS.buildWaMessage(title, itemsBody)), '_blank');
+                        if (meth === 'wa') PMS.openWA(PMS.buildWaMessage(title, itemsBody));
                         else window.open(PMS.buildEmailMessage(title, itemsBody), '_blank');
                     });
                 });

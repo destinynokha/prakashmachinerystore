@@ -55,6 +55,15 @@
         return 'https://wa.me/' + PMS.STORE.whatsapp + '?text=' + encodeURIComponent(msg);
     };
 
+    PMS.openWA = function (msg) {
+        var url = PMS.waUrl(msg);
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            window.location.href = url;
+        } else {
+            window.open(url, '_blank');
+        }
+    };
+
     PMS.compressImage = function (file, maxW, quality) {
         maxW = maxW || 1200; quality = quality || 0.8;
         return new Promise(function (resolve) {
