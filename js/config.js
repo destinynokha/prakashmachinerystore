@@ -15,7 +15,7 @@ PMS.STORE = {
     ordersEmail: "orders@prakashmachinerystore.com",
     address: "Khasra No. 571, Plot No. 49, Kalu Khan Ki Bari, Behind Laxmi Tara Cinema, Nagaur, Rajasthan - 341001",
     hours: "Monday - Saturday: 9:00 AM - 7:00 PM | Sunday: Closed",
-    mapUrl: "https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3532.8!2d73.74947030723422!3d27.19548725126207!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjfCsDExJzQzLjgiTiA3M8KwNDQnNTguMSJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin",
+    mapUrl: "https://www.google.com/maps/embed?pb=!1m13!1m8!1m3!1d456488.5720454186!2d73.48654461342886!3d26.638331985029755!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjfCsDExJzM4LjMiTiA3M8KwNDQnNTguMCJF!5e0!3m2!1sen!2sin!4v1771969199077!5m2!1sen!2sin",
     upiId: "prakashmachinerystore03-2@okhdfcbank",
     upiName: "Prakash Machinery Store",
     upiQr: "img/upi-qr.jpg"
