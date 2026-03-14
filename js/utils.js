@@ -87,7 +87,7 @@
     PMS.skeletons = function (el, n) {
         n = n || 6;
         var h = '<div class="product-grid">';
-        for (var i = 0; i < n; i++) h += '<div class="product-card skeleton-card"><div class="skeleton skeleton-image"></div><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div>';
+        for (var i = 0; i < n; i++) h += '<div class="product-card skeleton-card"><div class="skeleton-shimmer" style="padding-top:75%;border-radius:var(--radius-lg) var(--radius-lg) 0 0"></div><div class="skeleton-shimmer" style="height:16px;margin:var(--space-md);width:70%;border-radius:var(--radius-sm)"></div><div class="skeleton-shimmer" style="height:12px;margin:0 var(--space-md) var(--space-md);width:50%;border-radius:var(--radius-sm)"></div></div>';
         h += '</div>';
         el.innerHTML = h;
     };

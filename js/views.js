@@ -47,8 +47,14 @@
         wlPromise.then(function (wl) {
             wishlistIds = wl;
             el.innerHTML =
-                '<section class="store-page"><div class="container"><div class="store-layout">' +
-                '<aside class="store-sidebar" id="store-sidebar"><h3 class="sidebar-title">\uD83D\uDCC2 Categories</h3><div class="sidebar-cats" id="sidebar-cats"></div></aside>' +
+                '<section class="store-page"><div class="container">' +
+                '<button class="mobile-filter-btn" id="m-filter-btn">\uD83D\uDCC2 Categories / Filter</button>' +
+                '<div class="store-layout">' +
+                '<div class="sidebar-overlay" id="sidebar-overlay"></div>' +
+                '<aside class="store-sidebar" id="store-sidebar">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;" class="mobile-only">' +
+                '<h3 style="margin:0">\uD83D\uDCC2 Categories</h3><button class="modal-close" id="sidebar-close">\u2715</button></div>' +
+                '<h3 class="sidebar-title desktop-only">\uD83D\uDCC2 Categories</h3><div class="sidebar-cats" id="sidebar-cats"></div></aside>' +
                 '<div class="store-main">' +
                 '<div class="store-toolbar">' +
                 '</div>' +
@@ -56,6 +62,16 @@
                 '<div class="product-grid" id="pgrid"></div>' +
                 '<div id="cat-empty" class="empty-state hidden"><div class="empty-icon">\uD83D\uDD0D</div><h3>No products found</h3><p>Try changing your search or filter.</p></div>' +
                 '</div></div></div></section>';
+
+            var side = document.getElementById('store-sidebar');
+            var over = document.getElementById('sidebar-overlay');
+            var fBtn = document.getElementById('m-filter-btn');
+            var sClose = document.getElementById('sidebar-close');
+
+            function toggleSide() { if (side) side.classList.toggle('open'); if (over) over.classList.toggle('open'); }
+            if (fBtn) fBtn.onclick = toggleSide;
+            if (over) over.onclick = toggleSide;
+            if (sClose) sClose.onclick = toggleSide;
 
             loadSidebarCats();
             loadGrid();
@@ -82,6 +98,10 @@
                     btn.classList.add('active');
                     var ttl = document.getElementById('cat-title');
                     if (ttl) ttl.textContent = curCat === 'All' ? 'All Products' : curCat;
+                    if (window.innerWidth <= 768) {
+                        var side = document.getElementById('store-sidebar'), over = document.getElementById('sidebar-overlay');
+                        if (side) side.classList.remove('open'); if (over) over.classList.remove('open');
+                    }
                     loadGrid();
                 };
             });
@@ -256,10 +276,16 @@
                     specsH += '</table></div>';
                 }
                 var waMsg = "Hi, I'm interested in: " + p.name + (price ? ' (' + price + ')' : '') + ". Please share details.";
+                var carouselH = '<div class="carousel-container" id="p-carousel"><div class="carousel-track" id="c-track">' +
+                    imgs.map(function (im) { return '<div class="carousel-slide"><img src="' + PMS.esc(im) + '" alt="' + PMS.esc(p.name) + '"></div>'; }).join('') +
+                    '</div>' +
+                    (imgs.length > 1 ? '<div class="carousel-dot-container" id="c-dots"></div>' : '') +
+                    '</div>';
+
                 el.innerHTML = '<section class="product-detail"><div class="container">' +
                     '<div class="breadcrumb"><a href="#" onclick="event.preventDefault();PMS.go(\'home\')">Home</a><span class="sep">\u203A</span><a href="#" onclick="event.preventDefault();PMS.go(\'store\')">Store</a><span class="sep">\u203A</span><span>' + PMS.esc(p.name) + '</span></div>' +
-                    '<div class="product-detail-grid"><div class="product-gallery"><div class="gallery-main" id="gmain">' + (mainImg ? '<img src="' + PMS.esc(mainImg) + '" alt="' + PMS.esc(p.name) + '">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:5rem">\uD83D\uDCE6</div>') + '</div>' +
-                    (imgs.length > 1 ? '<div class="gallery-thumbs">' + imgs.map(function (im, i) { return '<div class="gallery-thumb ' + (i === 0 ? 'active' : '') + '" data-src="' + PMS.esc(im) + '"><img src="' + PMS.esc(im) + '" alt="Thumb"></div>'; }).join('') + '</div>' : '') +
+                    '<div class="product-detail-grid"><div class="product-gallery">' + carouselH +
+                    (imgs.length > 1 ? '<div class="gallery-thumbs" style="margin-top:16px">' + imgs.map(function (im, i) { return '<div class="gallery-thumb ' + (i === 0 ? 'active' : '') + '" data-idx="' + i + '"><img src="' + PMS.esc(im) + '" alt="Thumb"></div>'; }).join('') + '</div>' : '') +
                     '</div>' +
                     '<div class="product-info-section">' +
                     (p.category ? '<div class="product-detail-category">' + PMS.esc(p.category) + '</div>' : '') +
@@ -277,9 +303,43 @@
                     '<button class="btn btn-outline" id="d-wl">' + (isWl ? '\u2764\uFE0F Saved' : '\uD83E\uDD0D Save') + '</button>' +
                     '</div></div></div></div></section>';
 
-                el.querySelectorAll('.gallery-thumb').forEach(function (th) {
-                    th.onclick = function () { document.getElementById('gmain').innerHTML = '<img src="' + th.dataset.src + '" alt="">'; el.querySelectorAll('.gallery-thumb').forEach(function (t) { t.classList.remove('active'); }); th.classList.add('active'); };
+                // Carousel Logic
+                var currentSlide = 0;
+                var track = document.getElementById('c-track');
+                var dots = document.getElementById('c-dots');
+                var thumbs = el.querySelectorAll('.gallery-thumb');
+
+                function goToSlide(idx) {
+                    if (!track) return;
+                    currentSlide = idx;
+                    track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+                    if (dots) {
+                        dots.querySelectorAll('.carousel-dot').forEach(function (d, i) { d.classList[i === idx ? 'add' : 'remove']('active'); });
+                    }
+                    thumbs.forEach(function (t, i) { t.classList[i === idx ? 'add' : 'remove']('active'); });
+                }
+
+                if (imgs.length > 1 && dots) {
+                    dots.innerHTML = imgs.map(function (_, i) { return '<div class="carousel-dot ' + (i === 0 ? 'active' : '') + '" data-idx="' + i + '"></div>'; }).join('');
+                    dots.querySelectorAll('.carousel-dot').forEach(function (d) {
+                        d.onclick = function () { goToSlide(parseInt(d.dataset.idx)); };
+                    });
+                }
+
+                thumbs.forEach(function (th) {
+                    th.onclick = function () { goToSlide(parseInt(th.dataset.idx)); };
                 });
+
+                // Swipe support
+                var startX = 0, moveX = 0;
+                if (track) {
+                    track.ontouchstart = function (e) { startX = e.touches[0].clientX; };
+                    track.ontouchmove = function (e) { moveX = e.touches[0].clientX; };
+                    track.ontouchend = function () {
+                        if (startX - moveX > 50 && currentSlide < imgs.length - 1) goToSlide(currentSlide + 1);
+                        else if (moveX - startX > 50 && currentSlide > 0) goToSlide(currentSlide - 1);
+                    };
+                }
                 var dWa = document.getElementById('d-wa');
                 if (dWa) dWa.onclick = function () {
                     PMS.ensureProfile(function () {

@@ -1,11 +1,13 @@
 -- ===== Supabase Database Setup for Prakash Machinery Store =====
 -- Run this SQL in the Supabase SQL Editor (supabase.com/dashboard → SQL Editor)
+-- NOTE: This script is IDEMPOTENT and SAFE for existing data. 
+-- It will NOT delete or overwrite your table data. 
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
 -- ===== PRODUCTS TABLE =====
-create table products (
+create table if not exists products (
   id uuid default uuid_generate_v4() primary key,
   name text not null,
   description text,
@@ -24,15 +26,17 @@ create table products (
 alter table products enable row level security;
 
 -- Everyone can read products
+drop policy if exists "Products are viewable by everyone" on products;
 create policy "Products are viewable by everyone"
   on products for select using (true);
 
 -- Only authenticated users can insert/update/delete (we check owner in app)
+drop policy if exists "Authenticated users can manage products" on products;
 create policy "Authenticated users can manage products"
   on products for all using (auth.role() = 'authenticated');
 
 -- ===== ORDERS TABLE =====
-create table orders (
+create table if not exists orders (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid,
   customer_name text,
@@ -47,17 +51,20 @@ create table orders (
 alter table orders enable row level security;
 
 -- Users can view their own orders, owner can view all
+drop policy if exists "Users can view own orders" on orders;
 create policy "Users can view own orders"
   on orders for select using (auth.uid() = user_id);
 
+drop policy if exists "Authenticated users can insert orders" on orders;
 create policy "Authenticated users can insert orders"
   on orders for insert with check (auth.role() = 'authenticated');
 
+drop policy if exists "Authenticated users can update orders" on orders;
 create policy "Authenticated users can update orders"
   on orders for update using (auth.role() = 'authenticated');
 
 -- ===== WISHLISTS TABLE =====
-create table wishlists (
+create table if not exists wishlists (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid not null,
   product_id uuid not null references products(id) on delete cascade,
@@ -67,11 +74,12 @@ create table wishlists (
 
 alter table wishlists enable row level security;
 
+drop policy if exists "Users can manage own wishlists" on wishlists;
 create policy "Users can manage own wishlists"
   on wishlists for all using (auth.uid() = user_id);
 
 -- ===== CATEGORIES TABLE =====
-create table categories (
+create table if not exists categories (
   id uuid default uuid_generate_v4() primary key,
   name text not null unique,
   icon text default '',
@@ -81,9 +89,11 @@ create table categories (
 
 alter table categories enable row level security;
 
+drop policy if exists "Categories are viewable by everyone" on categories;
 create policy "Categories are viewable by everyone"
   on categories for select using (true);
 
+drop policy if exists "Authenticated users can manage categories" on categories;
 create policy "Authenticated users can manage categories"
   on categories for all using (auth.role() = 'authenticated');
 
@@ -94,7 +104,8 @@ insert into categories (name, sort_order) values
   ('Cutting Wheels', 3),
   ('Angle Grinders', 4),
   ('Power Tools', 5),
-  ('Machinery Equipment', 6);
+  ('Machinery Equipment', 6)
+on conflict (name) do nothing;
 -- ===== STORAGE BUCKET =====
 -- Do this in the Supabase Dashboard (not in SQL Editor):
 -- 1. Go to Storage → New Bucket
@@ -104,7 +115,7 @@ insert into categories (name, sort_order) values
 -- 5. Add another policy → Allow authenticated users for insert
 
 -- ===== LEADS TABLE =====
-create table leads (
+create table if not exists leads (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid,
   name text,
@@ -119,10 +130,12 @@ create table leads (
 alter table leads enable row level security;
 
 -- Authenticated users (admin) can view all leads
+drop policy if exists "Authenticated users can view leads" on leads;
 create policy "Authenticated users can view leads"
   on leads for select using (auth.role() = 'authenticated');
 
 -- Anyone can insert leads (public capture)
+drop policy if exists "Anyone can insert leads" on leads;
 create policy "Anyone can insert leads"
   on leads for insert with check (true);
 -- ===== UPDATES =====

@@ -9,9 +9,24 @@
 
         var qs = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
         history.pushState({ page: page, params: params }, '', '#' + page + qs);
-
+        updateActiveLinks(page);
         render(el, page, params);
     };
+
+    function updateActiveLinks(page) {
+        // Desktop/Mobile Drawer
+        ['home', 'store', 'pay', 'wish', 'cart', 'admin'].forEach(function (p) {
+            var l = document.getElementById(p + '-link'), ml = document.getElementById('m-' + p + '-link'), bl = document.getElementById('b-' + p);
+            if (l) l.classList[page === p ? 'add' : 'remove']('active');
+            if (ml) ml.classList[page === p ? 'add' : 'remove']('active');
+            if (bl) bl.classList[page === (p === 'wish' ? 'wishlist' : p) ? 'add' : 'remove']('active');
+        });
+        // Bottom nav specific
+        ['home', 'store', 'pay', 'cart'].forEach(function (p) {
+            var bl = document.getElementById('b-' + p);
+            if (bl) bl.classList[page === p ? 'add' : 'remove']('active');
+        });
+    }
 
     function render(el, page, params) {
         switch (page) {
@@ -102,6 +117,12 @@
 
         var mOrdersBtn = document.getElementById('m-orders-btn');
         if (mOrdersBtn) mOrdersBtn.onclick = function () { closeDrawer(); PMS.toast('Orders page coming soon!', 'info'); };
+
+        // Bottom Nav Bindings
+        ['home', 'store', 'cart', 'pay'].forEach(function (k) {
+            var el = document.getElementById('b-' + k);
+            if (el) el.onclick = function (e) { e.preventDefault(); PMS.go(k); };
+        });
         // ---------------------------
 
         PMS.updateCartBadge();
