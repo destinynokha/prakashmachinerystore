@@ -51,9 +51,6 @@
                 '<aside class="store-sidebar" id="store-sidebar"><h3 class="sidebar-title">\uD83D\uDCC2 Categories</h3><div class="sidebar-cats" id="sidebar-cats"></div></aside>' +
                 '<div class="store-main">' +
                 '<div class="store-toolbar">' +
-                '<div class="store-search"><input class="form-input" id="search-input-store" placeholder="\uD83D\uDD0D Search products...">' +
-                '</div>' +
-                '<select class="form-select" id="sort-sel-store"><option value="newest">Newest</option><option value="name">Name A-Z</option><option value="price-low">Price: Low-High</option><option value="price-high">Price: High-Low</option></select>' +
                 '</div>' +
                 '<div class="catalog-header"><h2 id="cat-title">All Products</h2><span class="catalog-count" id="cat-count"></span></div>' +
                 '<div class="product-grid" id="pgrid"></div>' +
@@ -63,15 +60,9 @@
             loadSidebarCats();
             loadGrid();
 
-            var si = document.getElementById('search-input-store');
-            if (si) si.oninput = PMS.debounce(function (e) { curSearch = e.target.value; loadGrid(); });
-
-            var ss = document.getElementById('sort-sel-store');
-            if (ss) { ss.value = curSort; ss.onchange = function () { curSort = ss.value; loadGrid(); }; }
-
             // Also bind navbar search
             var sn = document.getElementById('search-input');
-            if (sn) sn.oninput = PMS.debounce(function (e) { curSearch = e.target.value; if (si) si.value = curSearch; loadGrid(); });
+            if (sn) sn.oninput = PMS.debounce(function (e) { curSearch = e.target.value; loadGrid(); });
         });
     };
 
@@ -124,13 +115,8 @@
         if (!p.in_stock) badges = '<span class="card-badge card-badge-outofstock">Out of Stock</span>';
         else if (disc > 0) badges = '<span class="card-badge card-badge-discount">' + disc + '% OFF</span>';
 
-        var specsH = '';
-        if (p.specifications && Object.keys(p.specifications).length) {
-            specsH = '<div style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary)"><table style="width:100%">';
-            Object.entries(p.specifications).forEach(function (kv) { specsH += '<tr><td style="font-weight:600;padding-right:8px;vertical-align:top;width:40%">' + PMS.esc(kv[0]) + '</td><td>' + PMS.esc(kv[1]) + '</td></tr>'; });
-            specsH += '</table></div>';
-        }
-        var descH = p.description ? '<div style="margin-top:8px;font-size:0.85rem;color:var(--text-secondary);line-height:1.4">' + PMS.esc(p.description) + '</div>' : '';
+        var descH = p.description ? '<div class="product-card-desc">' + PMS.esc(p.description) + '</div>' : '';
+        var specsH = ''; // Hidden in grid view as per UI improvement plan
 
         return '<div class="product-card" data-id="' + p.id + '">' +
             '<div class="product-card-image">' +
@@ -283,6 +269,8 @@
                     '<div class="stock-indicator ' + (p.in_stock ? 'stock-in' : 'stock-out') + '"><span class="stock-dot"></span>' + (p.in_stock ? 'In Stock' : 'Out of Stock') + '</div>' +
                     '<p class="product-detail-desc">' + PMS.esc(p.description || '') + '</p>' +
                     specsH +
+                    (p.return_policy_days ? '<div><h3 style="font-size:1rem;font-weight:700;margin:16px 0 8px">\u21BA Return Policy</h3><p style="font-size:0.9rem;color:var(--text-secondary)">' + p.return_policy_days + ' Days Return available.</p></div>' : '') +
+                    (p.terms_conditions ? '<div><h3 style="font-size:1rem;font-weight:700;margin:16px 0 8px">\uD83D\uDCD4 Terms & Conditions</h3><p style="font-size:0.9rem;color:var(--text-secondary);white-space:pre-wrap">' + PMS.esc(p.terms_conditions) + '</p></div>' : '') +
                     '<div class="product-detail-actions">' +
                     (p.in_stock && price ? '<button class="btn btn-primary btn-lg" id="d-cart">\uD83D\uDED2 Add to Cart</button>' : '') +
                     '<button class="btn btn-whatsapp btn-lg" id="d-wa">\uD83D\uDCAC ' + (price ? 'Enquire' : 'Enquire') + ' / Order</button>' +
@@ -453,11 +441,13 @@
             '<div class="form-group"><label class="form-label">MRP \u20B9 <span class="optional">(opt)</span></label><input type="number" class="form-input" id="pf-mrp" placeholder="0" min="0"></div>' +
             '<div class="form-group full-width"><label class="form-label">Description *</label><textarea class="form-textarea" id="pf-desc" required placeholder="Description"></textarea></div>' +
             '<div class="form-group full-width"><label class="form-label">Product Images</label>' +
-            '<div class="image-upload-area" id="img-area"><div class="upload-icon">\uD83D\uDCF8</div><p>Click or drag to upload photos (max 4)</p><input type="file" id="pf-files" multiple accept="image/*" style="display:none"></div>' +
+            '<div class="image-upload-area" id="img-area"><div class="upload-icon">\uD83D\uDCF8</div><p>Click or drag to upload photos (max 10)</p><input type="file" id="pf-files" multiple accept="image/*" style="display:none"></div>' +
             '<div class="image-preview-grid" id="img-prev"></div>' +
             '</div>' +
             '<div class="form-group"><label class="form-label">In Stock</label><label class="toggle-switch"><input type="checkbox" id="pf-stock" checked><div class="toggle-track"></div><span class="toggle-label">Available</span></label></div>' +
             '<div class="form-group full-width"><label class="form-label">Specs <span class="optional">(Key: Value, one per line)</span></label><textarea class="form-textarea" id="pf-specs" placeholder="Power: 900W" style="min-height:70px"></textarea></div>' +
+            '<div class="form-group"><label class="form-label">Return Policy (Days) <span class="optional">(opt)</span></label><input type="number" class="form-input" id="pf-ret" placeholder="0" min="0"></div>' +
+            '<div class="form-group full-width"><label class="form-label">Terms & Conditions (Note) <span class="optional">(opt)</span></label><textarea class="form-textarea" id="pf-terms" placeholder="Warranty terms, etc." style="min-height:70px"></textarea></div>' +
             '</div>' +
             '<div class="form-actions"><button type="button" class="btn btn-ghost" id="pf-cancel">Cancel</button><button type="submit" class="btn btn-primary" id="pf-save">Save</button></div>' +
             '</form></div></div></div>' +
@@ -497,7 +487,7 @@
 
         function handleFiles(files) {
             Array.from(files).forEach(function (f) {
-                if (imgItems.length >= 4) { PMS.toast('Max 4 images.', 'warning'); return; }
+                if (imgItems.length >= 10) { PMS.toast('Max 10 images.', 'warning'); return; }
                 if (!f.type.startsWith('image/')) return;
                 var r = new FileReader();
                 r.onload = function (e) { imgItems.push({ type: 'file', file: f, preview: e.target.result }); renderPrev(); };
@@ -530,6 +520,8 @@
                     document.getElementById('pf-desc').value = product.description || '';
                     document.getElementById('pf-stock').checked = product.in_stock !== false;
                     document.getElementById('pf-specs').value = product.specifications ? Object.entries(product.specifications).map(function (kv) { return kv[0] + ': ' + kv[1]; }).join('\n') : '';
+                    document.getElementById('pf-ret').value = product.return_policy_days || '';
+                    document.getElementById('pf-terms').value = product.terms_conditions || '';
                     imgItems = (product.images || []).map(function (u) { return { type: 'url', url: u }; });
                     renderPrev();
                 } else {
@@ -557,7 +549,9 @@
                 mrp: document.getElementById('pf-mrp').value ? parseFloat(document.getElementById('pf-mrp').value) : null,
                 description: document.getElementById('pf-desc').value.trim(),
                 in_stock: document.getElementById('pf-stock').checked,
-                specifications: specs
+                specifications: specs,
+                return_policy_days: document.getElementById('pf-ret').value ? parseInt(document.getElementById('pf-ret').value) : 0,
+                terms_conditions: document.getElementById('pf-terms').value.trim()
             };
 
             var existingUrls = imgItems.filter(function (i) { return i.type === 'url'; }).map(function (i) { return i.url; });

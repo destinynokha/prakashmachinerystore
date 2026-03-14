@@ -602,16 +602,16 @@ select {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--primary);
   color: white;
-  border-color: var(--accent);
+  border-color: var(--primary);
 }
 
 .btn-primary:hover {
-  background: var(--accent-dark);
-  border-color: var(--accent-dark);
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-glow-accent);
+  box-shadow: var(--shadow-glow-primary);
 }
 
 .btn-secondary {
@@ -964,12 +964,30 @@ select {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 2;
 }
 
 .product-card-brand {
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-bottom: var(--space-sm);
+  margin-bottom: 4px;
+}
+
+.product-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 3;
+  text-overflow: ellipsis;
+}
+
+.product-card-specs {
+  display: none; /* Hide specs in the grid view for a cleaner look */
 }
 
 .product-card-price {

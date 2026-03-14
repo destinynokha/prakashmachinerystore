@@ -125,3 +125,7 @@ create policy "Authenticated users can view leads"
 -- Anyone can insert leads (public capture)
 create policy "Anyone can insert leads"
   on leads for insert with check (true);
+-- ===== UPDATES =====
+-- Add new columns to products table (Safe for existing data)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS return_policy_days int DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS terms_conditions text DEFAULT '';
